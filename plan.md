@@ -4,14 +4,14 @@
 
 **Tech Stack**
 
-* Language: TypeScript
-* Framework: React Native (Expo)
-* Package Manager: pnpm
-* Local Storage: expo-sqlite (native), sql.js (web planned)
-* State Management: React Context + local component state (no Zustand or Redux)
-* Navigation: React Navigation
-* Date Handling: dayjs
-* Styling: StyleSheet or Tailwind (NativeWind) TBD
+- Language: TypeScript
+- Framework: React Native (Expo)
+- Package Manager: pnpm
+- Local Storage: expo-sqlite (native), sql.js (web planned)
+- State Management: React Context + local component state (no Zustand or Redux)
+- Navigation: React Navigation
+- Date Handling: dayjs
+- Styling: StyleSheet or Tailwind (NativeWind) TBD
 
 ---
 
@@ -23,88 +23,90 @@
    `pnpm install`
 
 2. To enable web for testing quick, do this first:
-    `npx expo install react-dom react-native-web`
-    `pnpm install`
+   `npx expo install react-dom react-native-web`
+   `pnpm install`
 
 3. Then restart the project:
-    `pnpm expo start`
+   `pnpm expo start`
 
 4. Press:
-    `w`  # to open web in browser
+   `w` # to open web in browser
 
 ---
 
 **Folder Structure**
 
-* assets/
-* src/
+- assets/
+- src/
 
-  * components/  (UI components)
-  * screens/  (Home, AddActivity, ActivityLog, ManageKids)
-  * db/  (SQLite schema, DB access)
-  * context/  (React Context for app state)
-  * types/  (TypeScript types/interfaces)
-  * constants/
-  * utils/
-  * storage/  (platform-specific storage abstraction)
-* App.tsx
-* plan.txt  (this plan)
+  - components/ (UI components)
+  - screens/ (Home, AddActivity, ActivityLog, ManageKids)
+  - db/ (SQLite schema, DB access)
+  - context/ (React Context for app state)
+  - types/ (TypeScript types/interfaces)
+  - constants/
+  - utils/
+  - storage/ (platform-specific storage abstraction)
+
+- App.tsx
+- plan.txt (this plan)
 
 ---
 
 **MVP Features**
 
-* Add activity (feeding, sleep, diaper, etc.)
-* View activity log (by date, kid)
-* Daily summary screen
-* Manage multiple kids
-* All data stored locally
-* Type-safe forms and models
-* Responsive for Android, iOS, Web (web storage planned separately)
+- Add activity (feeding, sleep, diaper, etc.)
+- View activity log (by date, kid)
+- Daily summary screen
+- Manage multiple kids
+- All data stored locally
+- Type-safe forms and models
+- Responsive for Android, iOS, Web (web storage planned separately)
 
 ---
 
 **Activity Types**
 
-* Feeding (breast, bottle, side, amount, time)
-* Sleep (start/end/duration)
-* Diaper changes (wet, dirty, both)
-* Bathing
-* Medication
-* Notes or milestones
+- Feeding (breast, bottle, side, amount, time)
+- Sleep (start/end/duration)
+- Diaper changes (wet, dirty, both)
+- Bathing
+- Medication
+- Notes or milestones
 
 ---
 
 **State Management**
 
-* Use React Context for:
+- Use React Context for:
 
-  * Selected kid
-  * Theme (light/dark)
-  * Current date context
-* Use local `useState` or `useReducer` for form inputs and UI state
-* No Zustand or Redux for MVP
+  - Selected kid
+  - Theme (light/dark)
+  - Current date context
+
+- Use local `useState` or `useReducer` for form inputs and UI state
+- No Zustand or Redux for MVP
 
 ---
 
 **Database Design**
 
-* Table `kids`:
+- Table `kids`:
 
-  * id (UUID)
-  * name (TEXT)
-  * birthdate (TEXT)
+  - id (UUID)
+  - name (TEXT)
+  - birthdate (TEXT)
 
-* Table `activities`:
+- Table `activities`:
 
-  * id (UUID)
-  * kid_id (UUID)
-  * type (TEXT)
-  * timestamp (INTEGER)
-  * duration (INTEGER)
-  * details_json (TEXT)
-  * created_at (INTEGER)
-  * updated_at (INTEGER)
+  - id (UUID)
+  - kid_id (UUID)
+  - type (TEXT)
+  - timestamp (INTEGER)
+  - duration (INTEGER)
+  - details_json (TEXT)
+  - created_at (INTEGER)
+  - updated_at (INTEGER)
 
 ---
 
@@ -112,7 +114,7 @@
 
 1. Project Setup
 
-   * Create Expo project, install dependencies:
+   - Create Expo project, install dependencies:
      `pnpm add expo-sqlite react-navigation dayjs uuid`
      `pnpm add -D @types/uuid`
 
@@ -124,52 +126,57 @@ pnpm add -D @types/uuid
 npx expo install expo-sqlite
 pnpm add @react-native-async-storage/async-storage
 npx expo install @react-native-async-storage/async-storage
+pnpm add react-native-paper react-native-paper-dates date-fns
+pnpm add -D @types/react-native
+npm install react-native-paper
+npm install react-native-vector-icons
+npx expo install expo-image-picker
 
 pnpm install
 
 2. SQLite Integration
 
-   * Setup DB schema and connection files
-   * Implement methods to insert and query kids and activities
+   - Setup DB schema and connection files
+   - Implement methods to insert and query kids and activities
 
 3. Screens
 
-   * HomeScreen: daily summary, recent activities
-   * AddActivityScreen: add new activity form
-   * ActivityLogScreen: list of past activities with filters
-   * ManageKidsScreen: add/edit/delete kids
+   - HomeScreen: daily summary, recent activities
+   - AddActivityScreen: add new activity form
+   - ActivityLogScreen: list of past activities with filters
+   - ManageKidsScreen: add/edit/delete kids
 
 4. Context Setup
 
-   * Create AppContext with selected kid, theme, current date
+   - Create AppContext with selected kid, theme, current date
 
 5. Core Features
 
-   * Add activity form with validation
-   * Activity list with filters
-   * Summary metrics
-   * Kid management
-   * Dark mode toggle
+   - Add activity form with validation
+   - Activity list with filters
+   - Summary metrics
+   - Kid management
+   - Dark mode toggle
 
 ---
 
 **Optional Future Features (Phase 3)**
 
-* Export data as JSON or CSV (query DB directly)
-* Local notifications/reminders (use expo-notifications)
-* Light/Dark theme (React Context + theming)
-* Biometrics lock (expo-local-authentication)
-* Backup to file (expo-file-system)
+- Export data as JSON or CSV (query DB directly)
+- Local notifications/reminders (use expo-notifications)
+- Light/Dark theme (React Context + theming)
+- Biometrics lock (expo-local-authentication)
+- Backup to file (expo-file-system)
 
-*No Zustand or Redux needed for these.*
+_No Zustand or Redux needed for these._
 
 ---
 
 **Web Compatibility Plan**
 
-* Use `expo-sqlite` on Android/iOS
-* Use `sql.js` (SQLite compiled to WASM) on Web
-* Abstract storage behind a common interface that picks the right backend
+- Use `expo-sqlite` on Android/iOS
+- Use `sql.js` (SQLite compiled to WASM) on Web
+- Abstract storage behind a common interface that picks the right backend
 
 ---
 
@@ -189,18 +196,18 @@ pnpm install
 
 **Next Steps**
 
-* Set up project & install dependencies
-* Scaffold DB schema & storage layer
-* Build React Context for global state
-* Build core screens & connect DB
-* Plan optional features after MVP
+- Set up project & install dependencies
+- Scaffold DB schema & storage layer
+- Build React Context for global state
+- Build core screens & connect DB
+- Plan optional features after MVP
 
 ---
 
 **Notes**
 
-* Keep logic modular and simple for future sync support
-* Use UUIDs and timestamps from the start
-* Avoid premature optimization — focus on MVP
+- Keep logic modular and simple for future sync support
+- Use UUIDs and timestamps from the start
+- Avoid premature optimization — focus on MVP
 
 ---
