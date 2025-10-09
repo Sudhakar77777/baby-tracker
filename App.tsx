@@ -7,8 +7,13 @@ import { initStorage } from './src/storage/init';
 import HomeScreen from './src/screens/HomeScreen';
 import AddActivityScreen from './src/screens/AddActivityScreen';
 import ManageKidsScreen from './src/screens/ManageKidsScreen';
+import { registerTranslation } from 'react-native-paper-dates';
+import { en } from './locales';
+import { customTheme } from './theme';
 
 const Stack = createNativeStackNavigator();
+
+registerTranslation('en', en);
 
 export default function App() {
   useEffect(() => {
@@ -16,7 +21,7 @@ export default function App() {
   }, []);
 
   return (
-    <PaperProvider>
+    <PaperProvider theme={customTheme}>
       <NavigationContainer>
         <Stack.Navigator>
           <Stack.Screen name="Home" component={HomeScreen} />

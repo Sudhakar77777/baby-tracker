@@ -1,33 +1,41 @@
+// ManageKidsScreen.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  Button,
-  FlatList,
-  TouchableOpacity,
   ActivityIndicator,
+  StyleSheet,
+  FlatList,
 } from 'react-native';
-import { addKid, getAllKids, deleteKid, updateKid } from '../storage/kids';
-import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'react-native';
-import { DatePickerModal } from 'react-native-paper-dates';
-import { List, IconButton, Divider, RadioButton } from 'react-native-paper';
 import { Kid } from '../types/Kid';
+import { addKid, getAllKids, deleteKid, updateKid } from '../storage/kids';
 import dayjs from 'dayjs';
+import KidsList from '../components/KidsList';
+import KidForm from '../components/KidForm';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function ManageKidsScreen() {
-  // State variables
-  const [name, setName] = useState('');
-  const [birthdate, setBirthdate] = useState('');
-  const [gender, setGender] = useState<'boy' | 'girl' | 'other'>('boy');
-  const [photoUri, setPhotoUri] = useState<string>('');
-  const [open, setOpen] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(undefined);
   const [kids, setKids] = useState<Kid[]>([]);
-  const [editingKidId, setEditingKidId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [editingKid, setEditingKid] = useState<Kid | null>(null);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+
+  const [confirmationData, setConfirmationData] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }>({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
+
+  // Load kids list from storage
   const loadKids = async () => {
     setLoading(true);
     try {
@@ -40,248 +48,139 @@ export default function ManageKidsScreen() {
     }
   };
 
-  // Handle image picker
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      setPhotoUri(result.assets[0].uri);
-    }
-  };
-
-  const handleAddKid = async () => {
-    if (!name || !birthdate) return;
-
-    setLoading(true);
-    try {
-      if (editingKidId) {
-        await updateKid(editingKidId, name, birthdate, gender, photoUri);
-        setEditingKidId(null);
-      } else {
-        await addKid(name, birthdate, gender, photoUri);
-      }
-
-      setName('');
-      setBirthdate('');
-      setGender('boy');
-      setPhotoUri('');
-      await loadKids();
-    } catch (error) {
-      console.error('Failed to add/update kid', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEdit = (kid: Kid) => {
-    try {
-      if (!kid || !kid.id) throw new Error('Invalid kid data');
-
-      setEditingKidId(kid.id);
-      setName(kid.name || '');
-
-      // Validate birthdate, fallback if invalid
-      const parsedDate = kid.birthdate ? dayjs(kid.birthdate) : null;
-      if (parsedDate && parsedDate.isValid()) {
-        setBirthdate(kid.birthdate);
-        setDate(parsedDate.toDate());
-      } else {
-        setBirthdate('');
-        setDate(undefined);
-      }
-
-      setGender(kid.gender ?? 'boy');
-      setPhotoUri(kid.photoUri ?? '');
-    } catch (error) {
-      console.error('Failed to handle edit:', error);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this kid?')) return;
-
-    setLoading(true);
-    try {
-      await deleteKid(id);
-      await loadKids();
-    } catch (error) {
-      console.error('Failed to delete kid', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadKids();
   }, []);
 
+  // Add or update kid handler
+  const handleSaveKid = async (kid: Omit<Kid, 'id'>, id?: string) => {
+    setLoading(true);
+    try {
+      if (id) {
+        await updateKid(id, kid.name, kid.birthdate, kid.gender, kid.photoUri);
+      } else {
+        await addKid(kid.name, kid.birthdate, kid.gender, kid.photoUri);
+      }
+      await loadKids();
+      setIsFormVisible(false);
+      setEditingKid(null);
+    } catch (error) {
+      console.error('Failed to save kid', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete kid handler
+  const handleDeleteKid = (id: string) => {
+    setConfirmationData({
+      visible: true,
+      title: 'Confirm Delete',
+      message: 'Are you sure you want to delete this kid?',
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await deleteKid(id);
+          await loadKids();
+        } catch (error) {
+          console.error('Failed to delete kid', error);
+        } finally {
+          setLoading(false);
+          setConfirmationData((prev) => ({ ...prev, visible: false }));
+        }
+      },
+      onCancel: () => {
+        setConfirmationData((prev) => ({ ...prev, visible: false }));
+      },
+    });
+  };
+
+  // Open form for adding new kid
+  const openAddForm = () => {
+    setEditingKid(null);
+    setIsFormVisible(true);
+  };
+
+  // Open form for editing existing kid
+  const openEditForm = (kid: Kid) => {
+    setEditingKid(kid);
+    setIsFormVisible(true);
+  };
+
   return (
-    <View style={{ padding: 20 }}>
+    <View style={styles.container}>
       {loading && (
-        <View style={{ marginVertical: 10 }}>
-          <ActivityIndicator size="large" color="#0000ff" />
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color="#6200ee" />
           <Text style={{ textAlign: 'center' }}>Loading...</Text>
         </View>
       )}
 
-      <Text style={{ fontSize: 20, marginBottom: 10 }}>
-        {editingKidId ? 'Edit Kid' : 'Add Kid'}
-      </Text>
+      <Text style={styles.title}>Kids List:</Text>
 
-      <TextInput
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          padding: 8,
-          marginBottom: 10,
-          borderRadius: 5,
-        }}
+      <KidsList
+        kids={kids}
+        onEdit={openEditForm}
+        onDelete={handleDeleteKid}
+        loading={loading}
       />
 
-      <DatePickerModal
-        locale="en"
-        mode="single"
-        visible={open}
-        onDismiss={() => setOpen(false)}
-        date={date}
-        onConfirm={(params) => {
-          setOpen(false);
-          setDate(params.date);
-          setBirthdate(dayjs(params.date).format('YYYY-MM-DD'));
-        }}
-      />
-      <TouchableOpacity onPress={() => setOpen(true)}>
-        <TextInput
-          placeholder="Birthdate"
-          value={birthdate}
-          editable={false}
-          style={{
-            borderWidth: 1,
-            borderColor: '#ccc',
-            padding: 8,
-            marginBottom: 10,
-            borderRadius: 5,
-            backgroundColor: '#f9f9f9',
-          }}
-        />
-      </TouchableOpacity>
-
-      {/* Gender Selection */}
-      <Text style={{ marginTop: 10 }}>Gender:</Text>
-      <RadioButton.Group
-        onValueChange={(value: string) =>
-          setGender(value as 'boy' | 'girl' | 'other')
-        }
-        value={gender}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <RadioButton.Item label="Boy" value="boy" />
-          <RadioButton.Item label="Girl" value="girl" />
-          <RadioButton.Item label="Other" value="other" />
+      {/* Add Kid Floating Button */}
+      {!isFormVisible && (
+        <View style={styles.fabContainer}>
+          <Text
+            onPress={openAddForm}
+            style={styles.fab}
+            accessibilityRole="button"
+            accessibilityLabel="Add Kid"
+          >
+            ➕ Add Kid
+          </Text>
         </View>
-      </RadioButton.Group>
+      )}
 
-      {/* Photo Upload */}
-      <Button title="Pick Photo" onPress={pickImage} />
-
-      {/* Photo Preview */}
-      {photoUri ? (
-        <Image
-          source={{ uri: photoUri }}
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: 40,
-            marginVertical: 10,
+      {/* Kid Add/Edit Form */}
+      {isFormVisible && (
+        <KidForm
+          kid={editingKid}
+          onCancel={() => {
+            setIsFormVisible(false);
+            setEditingKid(null);
           }}
-        />
-      ) : null}
-
-      <Button
-        title={editingKidId ? 'Update Kid' : 'Add Kid'}
-        onPress={handleAddKid}
-        disabled={!name || !birthdate || loading}
-      />
-
-      {editingKidId && (
-        <Button
-          title="Cancel Edit"
-          onPress={() => {
-            setEditingKidId(null);
-            setName('');
-            setBirthdate('');
-            setGender('boy');
-            setPhotoUri('');
-          }}
-          color="gray"
-          disabled={loading}
+          onSave={handleSaveKid}
+          loading={loading}
         />
       )}
 
-      <Text style={{ fontSize: 18, marginTop: 20 }}>Kids List:</Text>
-
-      {loading ? <ActivityIndicator size="large" color="#6200ee" /> : null}
-
-      <FlatList
-        data={kids}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <List.Item
-            title={`${index + 1}. ${item.name} — ${dayjs(item.birthdate).format(
-              'MMM D, YYYY'
-            )}`}
-            description={
-              item.gender
-                ? item.gender.charAt(0).toUpperCase() + item.gender.slice(1)
-                : undefined
-            }
-            left={(props) =>
-              item.photoUri ? (
-                <Image
-                  source={{ uri: item.photoUri }}
-                  style={{ width: 40, height: 40, borderRadius: 20, margin: 8 }}
-                />
-              ) : (
-                <List.Icon
-                  {...props}
-                  icon={
-                    item.gender === 'boy'
-                      ? 'baby-bottle-outline'
-                      : item.gender === 'girl'
-                      ? 'baby-carriage'
-                      : 'baby-face-outline'
-                  }
-                />
-              )
-            }
-            right={(props) => (
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <IconButton
-                  {...props}
-                  icon="pencil"
-                  onPress={() => handleEdit(item)}
-                  disabled={loading}
-                />
-                <IconButton
-                  {...props}
-                  icon="delete"
-                  onPress={() => handleDelete(item.id)}
-                  disabled={loading}
-                />
-              </View>
-            )}
-          />
-        )}
-        ItemSeparatorComponent={() => <Divider />}
+      {/* Generic Confirmation Modal */}
+      <ConfirmationModal
+        visible={confirmationData.visible}
+        title={confirmationData.title}
+        message={confirmationData.message}
+        onConfirm={confirmationData.onConfirm}
+        onCancel={confirmationData.onCancel}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20 },
+  loading: { marginVertical: 10 },
+  title: { fontSize: 18, marginBottom: 10, fontWeight: '600' },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+  },
+  fab: {
+    fontSize: 24,
+    backgroundColor: '#6200ee',
+    color: 'white',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    overflow: 'hidden',
+    textAlign: 'center',
+  },
+});
