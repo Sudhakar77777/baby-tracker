@@ -8,9 +8,14 @@ import { DiaperActivity, OmitMeta } from '../../types/Activity';
 interface DiaperFormProps {
   onSubmit: (activity: OmitMeta<DiaperActivity>) => void;
   initialData?: OmitMeta<DiaperActivity>;
+  kidId: string;
 }
 
-export default function DiaperForm({ onSubmit, initialData }: DiaperFormProps) {
+export default function DiaperForm({
+  onSubmit,
+  initialData,
+  kidId,
+}: DiaperFormProps) {
   const [wet, setWet] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [timestamp] = useState(Date.now());
@@ -20,15 +25,10 @@ export default function DiaperForm({ onSubmit, initialData }: DiaperFormProps) {
       alert('Please select at least one option.');
       return;
     }
-    if (!initialData?.kidId) {
-      alert('Kid ID is missing');
-      return;
-    }
-
     onSubmit({
       type: 'diaper',
       timestamp,
-      kidId: initialData.kidId,
+      kidId,
       details: { wet, dirty },
     });
   };

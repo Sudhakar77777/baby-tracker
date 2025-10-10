@@ -134,6 +134,7 @@ export async function getActivitiesForKid(kidId: string): Promise<Activity[]> {
 
 // Delete activity by id
 export async function deleteActivity(id: string): Promise<boolean> {
+  console.log('Deleting activity with id:', id);
   try {
     const existing = await getAllActivities();
     const filtered = existing.filter((a) => a.id !== id);

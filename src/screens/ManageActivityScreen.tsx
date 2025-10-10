@@ -1,359 +1,225 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  FlatList,
-  TouchableOpacity,
+  Text,
   Modal,
-  Image,
+  TouchableOpacity,
   Alert,
+  ScrollView,
+  Image,
 } from 'react-native';
-import { AppContext } from '../context/AppContext';
-import { Activity, ActivityType } from '../types/Activity';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-// Define your stack param list with expected params for each route
-type RootStackParamList = {
-  ManageActivity: undefined;
-  AddEditActivity: {
-    activity?: Activity;
-    kidId?: string | null;
-  };
-  // add other routes here if needed
-};
-
-// Type the navigation prop for this screen
-type ManageActivityScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'ManageActivity'
->;
-
-const ACTIVITY_ICONS: Record<ActivityType, string> = {
-  feeding: 'food-apple',
-  sleep: 'bed',
-  diaper: 'baby',
-  bath: 'bathtub',
-  medication: 'pill',
-  note: 'note-text',
-  milestone: 'star',
-};
+import { getFallbackIconForKid } from '../utils/kidUtils';
+import { AppContext } from '../context/AppContext';
+import { Activity, NewActivity } from '../types/Activity';
+import ActivityList from '../components/activity/ActivityList';
+import ActivityForm from '../components/activity/ActivityForm';
 
 export default function ManageActivityScreen() {
-  const navigation = useNavigation<ManageActivityScreenNavigationProp>();
   const {
-    kids,
     activities,
-    reloadActivities,
-    deleteExistingActivity,
+    kids,
     selectedKid,
+    addNewActivity,
+    updateExistingActivity,
+    deleteExistingActivity,
     setSelectedKid,
   } = useContext(AppContext)!;
 
-  const [filteredKid, setFilteredKid] = useState<string | null>(null); // kid id filter
-  const [showKidSelectModal, setShowKidSelectModal] = useState(false);
-
-  // Filter activities to only today and filtered kid if set
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
-
-  const filteredActivities = activities.filter((act) => {
-    const ts = new Date(act.timestamp);
-    if (ts < todayStart || ts > todayEnd) return false;
-    if (filteredKid && act.kidId !== filteredKid) return false;
-    return true;
-  });
-
-  useEffect(() => {
-    reloadActivities();
-  }, []);
-
-  // Delete confirmation
-  const confirmDeleteActivity = (id: string) => {
-    Alert.alert(
-      'Delete Activity',
-      'Are you sure you want to delete this activity?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteExistingActivity(id);
-            await reloadActivities();
-          },
-        },
-      ]
-    );
-  };
-
-  // Navigate to form for add/edit
-  function goToForm(activity?: Activity) {
-    navigation.navigate('AddEditActivity', {
-      activity,
-      kidId: filteredKid || null,
-    });
-  }
-
-  // Kid card inside modal
-  const KidCard = ({ kid }: { kid: (typeof kids)[0] }) => (
-    <TouchableOpacity
-      style={styles.kidCard}
-      onPress={() => {
-        setFilteredKid(kid.id);
-        setSelectedKid(kid);
-        setShowKidSelectModal(false);
-      }}
-    >
-      {kid.photoUri ? (
-        <Image source={{ uri: kid.photoUri }} style={styles.kidPhoto} />
-      ) : (
-        <View style={[styles.kidPhoto, styles.kidPhotoPlaceholder]}>
-          <Text style={{ fontSize: 18, color: '#666' }}>
-            {kid.name.charAt(0).toUpperCase()}
-          </Text>
-        </View>
-      )}
-      <Text style={styles.kidName}>{kid.name}</Text>
-    </TouchableOpacity>
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | undefined>(
+    undefined
+  );
+  const [selectedKidFilter, setSelectedKidFilter] = useState<string | null>(
+    null
   );
 
-  // Activity card
-  const ActivityCard = ({ activity }: { activity: Activity }) => {
-    const kid = kids.find((k) => k.id === activity.kidId);
-    if (!kid) return null;
+  const todayActivities = activities.filter((a) => {
+    const isToday =
+      new Date(a.timestamp).toDateString() === new Date().toDateString();
+    const matchesKid = selectedKidFilter ? a.kidId === selectedKidFilter : true;
+    return isToday && matchesKid;
+  });
 
-    return (
-      <View style={styles.activityCard}>
-        <View style={styles.activityHeader}>
-          <View style={styles.kidInfo}>
-            {kid.photoUri ? (
-              <Image source={{ uri: kid.photoUri }} style={styles.kidThumb} />
-            ) : (
-              <View style={[styles.kidThumb, styles.kidPhotoPlaceholder]}>
-                <Text style={{ fontSize: 12, color: '#666' }}>
-                  {kid.name.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-            )}
-            <Text style={styles.kidNameSmall}>{kid.name}</Text>
-          </View>
-          <View style={styles.actions}>
-            <TouchableOpacity onPress={() => goToForm(activity)}>
-              <Icon name="square-edit-outline" size={24} color="#6200ee" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ marginLeft: 15 }}
-              onPress={() => confirmDeleteActivity(activity.id)}
-            >
-              <Icon name="delete-outline" size={24} color="#b00020" />
-            </TouchableOpacity>
-          </View>
-        </View>
+  const generateUniqueId = () =>
+    Math.random().toString(36).substring(2) + Date.now().toString(36);
 
-        <View style={styles.activityBody}>
-          <Icon
-            name={ACTIVITY_ICONS[activity.type]}
-            size={30}
-            color="#6200ee"
-            style={{ marginRight: 10 }}
-          />
-          <Text style={styles.activityType}>{activity.type.toUpperCase()}</Text>
-        </View>
-        <Text style={styles.timestamp}>
-          {new Date(activity.timestamp).toLocaleTimeString()}
-        </Text>
-      </View>
+  const handleSubmit = async (newActivity: NewActivity) => {
+    try {
+      const fullActivity: Activity = {
+        ...newActivity,
+        id: editingActivity ? editingActivity.id : generateUniqueId(),
+        createdAt: editingActivity ? editingActivity.createdAt : Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      if (editingActivity) {
+        await updateExistingActivity(editingActivity.id, fullActivity);
+        console.log('Activity updated:', fullActivity);
+      } else {
+        await addNewActivity(fullActivity);
+        console.log('Activity added:', fullActivity);
+      }
+
+      setModalVisible(false);
+      setEditingActivity(undefined);
+    } catch (error: unknown) {
+      console.error('Error saving activity:', error);
+      Alert.alert(
+        'Error saving activity',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    const confirmAndDelete = async () => {
+      try {
+        await deleteExistingActivity(id);
+        console.log('Deleted activity id:', id);
+      } catch (error) {
+        console.error('Error deleting activity:', error);
+      }
+    };
+
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this activity?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: confirmAndDelete },
+      ]
     );
   };
 
   return (
     <View style={styles.container}>
-      {/* Filter & Select Kid */}
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setShowKidSelectModal(true)}
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Today's Activities</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.kidFilterScroll}
         >
-          <Text style={{ color: filteredKid ? '#fff' : '#6200ee' }}>
-            {filteredKid
-              ? kids.find((k) => k.id === filteredKid)?.name || 'Select Kid'
-              : 'Select Kid'}
-          </Text>
-        </TouchableOpacity>
-
-        {filteredKid && (
           <TouchableOpacity
-            style={[styles.filterButton, { backgroundColor: '#b00020' }]}
-            onPress={() => setFilteredKid(null)}
+            onPress={() => setSelectedKidFilter(null)}
+            style={styles.kidFilterItem}
           >
-            <Text style={{ color: '#fff' }}>Clear</Text>
+            <Icon
+              name="account-group"
+              size={28}
+              color={selectedKidFilter === null ? '#6200ee' : '#999'}
+            />
           </TouchableOpacity>
-        )}
+
+          {kids.map((kid) => (
+            <TouchableOpacity
+              key={kid.id}
+              onPress={() => setSelectedKidFilter(kid.id)}
+              style={styles.kidFilterItem}
+            >
+              {kid.photoUri ? (
+                <Image
+                  source={{ uri: kid.photoUri }}
+                  style={[
+                    styles.kidFilterPhoto,
+                    selectedKidFilter === kid.id &&
+                      styles.kidFilterPhotoSelected,
+                  ]}
+                />
+              ) : (
+                <Icon
+                  name={getFallbackIconForKid(kid.id)}
+                  size={28}
+                  color={selectedKidFilter === kid.id ? '#6200ee' : '#999'}
+                  style={styles.kidFilterFallbackIcon}
+                />
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
-      {/* Activities list */}
-      <FlatList
-        data={filteredActivities}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ActivityCard activity={item} />}
-        ListEmptyComponent={
-          <View style={styles.centered}>
-            <Text>
-              No activities for today{filteredKid ? ' for selected kid' : ''}.
-            </Text>
-          </View>
-        }
-        contentContainerStyle={{ paddingBottom: 100 }}
+      <ActivityList
+        activities={todayActivities}
+        onEdit={(activity) => {
+          setEditingActivity(activity);
+          setModalVisible(true);
+          const kidObj = kids.find((k) => k.id === activity.kidId);
+          if (kidObj) setSelectedKid(kidObj);
+        }}
+        onDelete={handleDelete}
       />
 
-      {/* Add Activity button */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => {
-          if (!filteredKid) {
-            setShowKidSelectModal(true);
-          } else {
-            goToForm();
-          }
+          setEditingActivity(undefined);
+          setModalVisible(true);
         }}
       >
-        <Icon name="plus" size={30} color="white" />
+        <Icon name="plus-circle" size={56} color="#6200ee" />
       </TouchableOpacity>
 
-      {/* Kid Select Modal */}
       <Modal
-        visible={showKidSelectModal}
+        visible={modalVisible}
         animationType="slide"
-        transparent={true}
+        onRequestClose={() => {
+          setModalVisible(false);
+          setEditingActivity(undefined);
+        }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Kid</Text>
-            <FlatList
-              data={kids}
-              keyExtractor={(item) => item.id}
-              numColumns={3}
-              renderItem={({ item }) => <KidCard kid={item} />}
-              contentContainerStyle={{ paddingVertical: 10 }}
-            />
-            <TouchableOpacity
-              onPress={() => setShowKidSelectModal(false)}
-              style={styles.modalCloseButton}
-            >
-              <Text style={{ color: '#6200ee' }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <ActivityForm
+          existingActivity={editingActivity}
+          onCancel={() => {
+            setModalVisible(false);
+            setEditingActivity(undefined);
+          }}
+          onSubmit={handleSubmit}
+        />
       </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  filterRow: { flexDirection: 'row', marginBottom: 12 },
-  filterButton: {
-    flex: 1,
-    borderColor: '#6200ee',
-    borderWidth: 1,
-    borderRadius: 6,
-    padding: 10,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 40,
-  },
-
-  activityCard: {
-    backgroundColor: '#f7f7f7',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-    elevation: 2,
-  },
-  activityHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  kidInfo: { flexDirection: 'row', alignItems: 'center' },
-  kidThumb: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  kidPhotoPlaceholder: { backgroundColor: '#ccc' },
-  kidNameSmall: { fontWeight: '600' },
-  actions: { flexDirection: 'row', alignItems: 'center' },
-
-  activityBody: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  activityType: { fontSize: 16, fontWeight: 'bold' },
-  timestamp: { fontSize: 12, color: '#666', textAlign: 'right' },
-
+  container: { flex: 1, padding: 12, backgroundColor: '#fff' },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
   addButton: {
     position: 'absolute',
-    bottom: 30,
-    right: 30,
-    backgroundColor: '#6200ee',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
+    bottom: 24,
+    right: 24,
+    zIndex: 10,
   },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  headerRow: {
     marginBottom: 12,
-    textAlign: 'center',
   },
-  modalCloseButton: {
-    marginTop: 15,
-    alignSelf: 'center',
-  },
-
-  kidCard: {
-    flex: 1,
-    margin: 6,
+  kidFilterScroll: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  kidPhoto: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+  kidFilterItem: {
+    marginLeft: 8,
   },
-  kidName: {
-    marginTop: 6,
-    fontWeight: '600',
+  kidFilterPhoto: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  kidFilterPhotoSelected: {
+    borderColor: '#6200ee',
+    borderWidth: 2,
+  },
+  kidFilterFallbackIcon: {
+    width: 28,
+    height: 28,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    backgroundColor: '#eee',
+    borderRadius: 14,
+    padding: 2,
   },
 });

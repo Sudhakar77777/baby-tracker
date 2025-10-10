@@ -1,113 +1,206 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   FlatList,
   Text,
   View,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from 'react-native';
-import { getAllActivities } from '../../storage/activities';
-import { Activity } from '../../types/Activity';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import dayjs from 'dayjs';
+import { Activity } from '../../types/Activity';
+import { AppContext } from '../../context/AppContext';
+import { getFallbackIconForKid } from '../../utils/kidUtils';
 
 interface ActivityListProps {
-  kidId?: string;
-  onSelectActivity?: (activity: Activity) => void;
+  activities: Activity[];
+  onEdit: (activity: Activity) => void;
+  onDelete: (activityId: string) => void;
 }
 
-export const ActivityList: React.FC<ActivityListProps> = ({
-  kidId,
-  onSelectActivity,
-}) => {
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
+const iconMap: Record<string, string> = {
+  feeding: 'baby-bottle',
+  sleep: 'bed',
+  diaper: 'baby',
+  bath: 'bathtub',
+  medication: 'pill',
+  note: 'note-text',
+  milestone: 'star',
+};
 
-  useEffect(() => {
-    async function loadActivities() {
-      setLoading(true);
-      try {
-        const allActivities = await getAllActivities();
-        // Filter by kidId if provided
-        const filtered = kidId
-          ? allActivities.filter((a) => a.kidId === kidId)
-          : allActivities;
-        // Sort descending by timestamp
-        filtered.sort((a, b) => b.timestamp - a.timestamp);
-        setActivities(filtered);
-      } catch (error) {
-        console.error('Error loading activities', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+function getDetailsSummary(item: Activity): string {
+  const { type, details } = item;
 
-    loadActivities();
-  }, [kidId]);
-
-  if (loading) {
-    return <Text style={styles.loading}>Loading activities...</Text>;
+  switch (type) {
+    case 'note':
+      return `Note: ${details.content || ''}`;
+    case 'feeding':
+      return `Method: ${details.method}${
+        details.amount ? `, ${details.amount}ml` : ''
+      }`;
+    case 'sleep':
+      const durationMins = details.duration
+        ? Math.round(details.duration / 60000)
+        : 0;
+      return `Duration: ${durationMins} min`;
+    case 'diaper':
+      const wet = details.wet ? 'Wet' : '';
+      const dirty = details.dirty ? 'Dirty' : '';
+      return [wet, dirty].filter(Boolean).join(', ') || 'Dry';
+    case 'medication':
+      return `${details.name} - ${details.dose}`;
+    case 'bath':
+      return 'Bath given';
+    case 'milestone':
+      return `Milestone: ${details.event || ''}`;
+    default:
+      return '';
   }
+}
+
+function ActivityList(props: ActivityListProps) {
+  const { activities, onEdit, onDelete } = props;
+  const { kids } = React.useContext(AppContext)!;
 
   if (activities.length === 0) {
     return <Text style={styles.empty}>No activities found.</Text>;
   }
 
-  const renderItem = ({ item }: { item: Activity }) => {
+  function renderItem({ item }: { item: Activity }) {
+    const kid = kids.find((k) => k.id === item.kidId);
+
     return (
-      <TouchableOpacity
-        style={styles.itemContainer}
-        onPress={() => onSelectActivity?.(item)}
-      >
-        <View style={styles.iconPlaceholder}>
-          {/* You can replace this with an icon based on item.type */}
-          <Text style={styles.iconText}>
-            {item.type.charAt(0).toUpperCase()}
-          </Text>
+      <View style={styles.itemContainer}>
+        <View style={styles.left}>
+          <Icon
+            name={iconMap[item.type]}
+            size={36}
+            color="#6200ee"
+            style={styles.icon}
+          />
+
+          {kid?.photoUri ? (
+            <Image source={{ uri: kid.photoUri }} style={styles.kidPhoto} />
+          ) : (
+            <Icon
+              name={getFallbackIconForKid(kid?.id || '')}
+              size={28}
+              color="#888"
+              style={styles.kidPhoto}
+            />
+          )}
+
+          <View style={styles.textContainer}>
+            <Text style={styles.type}>{item.type}</Text>
+            <Text style={styles.kidId}>Kid ID: {item.kidId}</Text>
+            <Text style={styles.timestamp}>
+              {dayjs(item.timestamp).format('MMM D, h:mm A')}
+            </Text>
+            <Text style={styles.timestampSmall}>
+              Created: {dayjs(item.createdAt).format('MMM D, h:mm A')}
+            </Text>
+            <Text style={styles.timestampSmall}>
+              Updated: {dayjs(item.updatedAt).format('MMM D, h:mm A')}
+            </Text>
+            <Text style={styles.details}>{getDetailsSummary(item)}</Text>
+          </View>
         </View>
-        <View style={styles.infoContainer}>
-          <Text style={styles.typeText}>{item.type}</Text>
-          <Text style={styles.timeText}>
-            {dayjs(item.timestamp).format('MMM D, h:mm A')}
-          </Text>
-          {/* Optionally show summary/details */}
+
+        <View style={styles.actions}>
+          <TouchableOpacity onPress={() => onEdit(item)}>
+            <Icon name="pencil" size={22} color="#6200ee" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => onDelete(item.id)}
+            style={{ marginLeft: 12 }}
+          >
+            <Icon name="delete" size={22} color="#b00020" />
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     );
-  };
+  }
 
   return (
     <FlatList
       data={activities}
       keyExtractor={(item) => item.id}
       renderItem={renderItem}
-      style={styles.list}
-      contentContainerStyle={{ paddingBottom: 50 }}
+      contentContainerStyle={styles.list}
     />
   );
-};
+}
+
+export default ActivityList;
 
 const styles = StyleSheet.create({
-  loading: { textAlign: 'center', marginTop: 20, fontSize: 16 },
-  empty: { textAlign: 'center', marginTop: 20, fontSize: 16, color: '#666' },
-  list: { flex: 1 },
+  empty: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#666',
+  },
+  list: {
+    paddingBottom: 50,
+  },
   itemContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  iconPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FF8800',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  left: {
+    flexDirection: 'row',
+    flex: 1,
   },
-  iconText: { color: 'white', fontWeight: 'bold', fontSize: 18 },
-  infoContainer: { flex: 1 },
-  typeText: { fontWeight: '600', fontSize: 16, textTransform: 'capitalize' },
-  timeText: { color: '#666', fontSize: 14, marginTop: 2 },
+  icon: {
+    marginRight: 8,
+    marginTop: 6,
+  },
+  kidPhoto: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginRight: 8,
+    marginTop: 6,
+    backgroundColor: '#eee',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+  },
+  textContainer: {
+    flex: 1,
+  },
+  type: {
+    fontSize: 16,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+    color: '#333',
+  },
+  kidId: {
+    fontSize: 13,
+    color: '#444',
+    marginBottom: 4,
+  },
+  timestamp: {
+    fontSize: 13,
+    color: '#555',
+  },
+  timestampSmall: {
+    fontSize: 12,
+    color: '#999',
+  },
+  details: {
+    fontSize: 14,
+    color: '#444',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 6,
+  },
 });

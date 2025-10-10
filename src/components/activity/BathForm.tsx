@@ -8,9 +8,14 @@ import { BathActivity, OmitMeta } from '../../types/Activity';
 interface BathFormProps {
   onSubmit: (activity: OmitMeta<BathActivity>) => void;
   initialData?: OmitMeta<BathActivity>;
+  kidId: string;
 }
 
-export default function BathForm({ onSubmit, initialData }: BathFormProps) {
+export default function BathForm({
+  onSubmit,
+  initialData,
+  kidId,
+}: BathFormProps) {
   const [content, setContent] = useState(initialData?.details.content ?? '');
   const [date, setDate] = useState<Date | undefined>(
     initialData ? new Date(initialData.timestamp) : undefined
@@ -26,15 +31,10 @@ export default function BathForm({ onSubmit, initialData }: BathFormProps) {
       alert('Please select a date.');
       return;
     }
-    if (!initialData?.kidId) {
-      alert('Kid ID is missing');
-      return;
-    }
-
     onSubmit({
       type: 'bath',
       timestamp: date.getTime(),
-      kidId: initialData.kidId,
+      kidId,
       details: { content: content.trim() },
     });
   };

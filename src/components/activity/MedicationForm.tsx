@@ -9,11 +9,13 @@ import { MedicationUnit } from '../../types/Medication';
 interface MedicationFormProps {
   onSubmit: (activity: OmitMeta<MedicationActivity>) => void;
   initialData?: OmitMeta<MedicationActivity>;
+  kidId: string;
 }
 
 export default function MedicationForm({
   onSubmit,
   initialData,
+  kidId,
 }: MedicationFormProps) {
   const [medicationName, setMedicationName] = useState(
     initialData?.details.name ?? ''
@@ -41,15 +43,10 @@ export default function MedicationForm({
       alert('Please select a date.');
       return;
     }
-    if (!initialData?.kidId) {
-      alert('Kid ID is missing');
-      return;
-    }
-
     onSubmit({
       type: 'medication',
       timestamp: date.getTime(),
-      kidId: initialData.kidId,
+      kidId,
       details: {
         name: medicationName.trim(),
         dose: dose.trim(),

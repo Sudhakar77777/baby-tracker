@@ -7,8 +7,8 @@ import {
   addActivity,
   updateActivity,
   deleteActivity,
-  NewActivity,
 } from '../storage/activities';
+import { NewActivity } from '../types/Activity';
 
 interface AppContextType {
   kids: Kid[];
@@ -22,9 +22,7 @@ interface AppContextType {
   deleteExistingKid: (id: string) => Promise<void>;
 
   reloadActivities: () => Promise<void>;
-  addNewActivity: (
-    activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>
-  ) => Promise<void>;
+  addNewActivity: (activity: NewActivity) => Promise<void>;
   updateExistingActivity: (
     id: string,
     activity: Partial<Activity>
@@ -113,6 +111,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteExistingActivity = async (id: string) => {
+    console.log('Deleting activity with id:', id);
     try {
       const success = await deleteActivity(id);
       if (!success) {

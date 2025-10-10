@@ -53,10 +53,10 @@ export interface DiaperActivity extends BaseActivity {
 
 export interface SleepActivity extends BaseActivity {
   type: typeof ActivityType.SLEEP;
-  duration: number; // in minutes
   details: {
     start: number;
     end: number;
+    duration: number; // in minutes
   };
 }
 

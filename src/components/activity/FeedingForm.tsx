@@ -25,11 +25,13 @@ interface FeedingFormProps {
     },
     'kidId' | 'id' | 'createdAt' | 'updatedAt'
   >;
+  kidId: string;
 }
 
 export default function FeedingForm({
   onSubmit,
   initialData,
+  kidId,
 }: FeedingFormProps) {
   // use constants from FeedingMethod and BreastSide
   const [method, setMethod] = useState<FeedingMethod>(

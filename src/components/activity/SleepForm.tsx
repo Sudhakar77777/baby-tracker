@@ -13,9 +13,14 @@ dayjs.extend(duration);
 interface SleepFormProps {
   onSubmit: (activity: OmitMeta<SleepActivity>) => void;
   initialData?: OmitMeta<SleepActivity>;
+  kidId: string;
 }
 
-export default function SleepForm({ onSubmit, initialData }: SleepFormProps) {
+export default function SleepForm({
+  onSubmit,
+  initialData,
+  kidId,
+}: SleepFormProps) {
   const [startDate, setStartDate] = useState<Date>(
     initialData ? new Date(initialData.details.start) : new Date()
   );
@@ -59,12 +64,12 @@ export default function SleepForm({ onSubmit, initialData }: SleepFormProps) {
     onSubmit({
       type: 'sleep',
       timestamp: start.getTime(),
-      duration: durationMinutes, // in minutes
       details: {
         start: start.getTime(),
         end: end.getTime(),
+        duration: durationMinutes, // in minutes
       },
-      kidId: initialData?.kidId!,
+      kidId,
     });
   };
 

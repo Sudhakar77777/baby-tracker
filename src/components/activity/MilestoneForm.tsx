@@ -8,11 +8,13 @@ import { MilestoneActivity, OmitMeta } from '../../types/Activity';
 interface MilestoneFormProps {
   onSubmit: (activity: OmitMeta<MilestoneActivity>) => void;
   initialData?: OmitMeta<MilestoneActivity>;
+  kidId: string;
 }
 
 export default function MilestoneForm({
   onSubmit,
   initialData,
+  kidId,
 }: MilestoneFormProps) {
   const [event, setEvent] = useState(initialData?.details.event ?? '');
   const [date, setDate] = useState<Date | undefined>(
@@ -29,15 +31,10 @@ export default function MilestoneForm({
       alert('Please select a date.');
       return;
     }
-    if (!initialData?.kidId) {
-      alert('Kid ID is missing');
-      return;
-    }
-
     onSubmit({
       type: 'milestone',
       timestamp: date.getTime(),
-      kidId: initialData.kidId,
+      kidId,
       details: { event: event.trim() },
     });
   };

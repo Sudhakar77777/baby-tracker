@@ -6,28 +6,29 @@ import { NoteActivity, OmitMeta } from '../../types/Activity';
 interface NoteFormProps {
   onSubmit: (activity: OmitMeta<NoteActivity>) => void;
   initialData?: OmitMeta<NoteActivity>;
+  kidId: string;
 }
 
-export default function NoteForm({ onSubmit, initialData }: NoteFormProps) {
+export default function NoteForm({
+  onSubmit,
+  initialData,
+  kidId,
+}: NoteFormProps) {
   const [content, setContent] = useState(initialData?.details.content ?? '');
   const [timestamp] = useState(
     initialData ? initialData.timestamp : Date.now()
   );
+  console.log('initialData:', initialData);
 
   const handleSubmit = () => {
     if (!content.trim()) {
       alert('Please enter some note content.');
       return;
     }
-    if (!initialData?.kidId) {
-      alert('Kid ID is missing');
-      return;
-    }
-
     onSubmit({
       type: 'note',
       timestamp,
-      kidId: initialData.kidId,
+      kidId,
       details: { content: content.trim() },
     });
   };
