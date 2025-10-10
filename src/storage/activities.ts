@@ -1,7 +1,8 @@
 // src/storage/activities.ts
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
+
 import {
   Activity,
   FeedingActivity,
@@ -57,7 +58,7 @@ export async function addActivity(
     const timestamp = Date.now();
     const newActivity: Activity = {
       ...activity,
-      id: uuidv4(),
+      id: uuid.v4(),
       createdAt: timestamp,
       updatedAt: timestamp,
     };

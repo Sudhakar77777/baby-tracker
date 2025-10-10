@@ -1,7 +1,7 @@
 // src/storage/kids.ts
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 import { Kid } from '../types/Kid';
 
 const KIDS_KEY = 'kids_list';
@@ -23,7 +23,7 @@ export async function addKid(
   photoUri?: string
 ): Promise<Kid> {
   const newKid: Kid = {
-    id: uuidv4(),
+    id: uuid.v4(),
     name,
     birthdate,
     gender,

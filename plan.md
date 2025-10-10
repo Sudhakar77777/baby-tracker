@@ -131,6 +131,7 @@ pnpm add -D @types/react-native
 npm install react-native-paper
 npm install react-native-vector-icons
 npx expo install expo-image-picker
+npm install react-native-uuid
 
 pnpm install
 
