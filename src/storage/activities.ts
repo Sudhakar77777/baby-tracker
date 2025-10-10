@@ -2,11 +2,23 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
-import { Activity } from '../types/Activity';
+import {
+  Activity,
+  FeedingActivity,
+  MedicationActivity,
+  DiaperActivity,
+  SleepActivity,
+  BathActivity,
+  NoteActivity,
+  MilestoneActivity,
+  OmitMeta,
+  NewActivity,
+  ActivityType, // ✅ New import
+} from '../types/Activity';
 
 const ACTIVITY_KEY = 'activity_list';
 
-// Utility: Safely parse JSON
+// Utility: Safely parse JSON string to Activity[]
 function safeParse(json: string | null): Activity[] {
   try {
     const data = JSON.parse(json || '[]');
@@ -21,7 +33,7 @@ function safeParse(json: string | null): Activity[] {
   }
 }
 
-// Get all activities
+// Get all activities from storage
 export async function getAllActivities(): Promise<Activity[]> {
   let rawData: string | null = null;
   try {
@@ -37,9 +49,9 @@ export async function getAllActivities(): Promise<Activity[]> {
   }
 }
 
-// Add new activity
+// Add a new activity to storage
 export async function addActivity(
-  activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>
+  activity: NewActivity
 ): Promise<Activity | null> {
   try {
     const timestamp = Date.now();
@@ -54,6 +66,9 @@ export async function addActivity(
     const updated = [...existing, newActivity];
 
     await AsyncStorage.setItem(ACTIVITY_KEY, JSON.stringify(updated));
+    if (__DEV__) {
+      console.log('[addActivity] Added activity with id:', newActivity.id);
+    }
     return newActivity;
   } catch (err) {
     console.error('[addActivity] Failed to add activity:', err);
@@ -61,11 +76,11 @@ export async function addActivity(
   }
 }
 
-// Update existing activity
-export async function updateActivity(
+// Update existing activity by id
+export async function updateActivity<T extends Activity>(
   id: string,
-  activity: Partial<Activity>
-): Promise<Activity | null> {
+  activity: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>
+): Promise<T | null> {
   try {
     const existing = await getAllActivities();
     const index = existing.findIndex((a) => a.id === id);
@@ -75,8 +90,16 @@ export async function updateActivity(
       return null;
     }
 
-    const updatedActivity: Activity = {
-      ...existing[index],
+    const oldActivity = existing[index] as T;
+
+    // ✅ Runtime type check remains valid
+    if (activity.type && activity.type !== oldActivity.type) {
+      console.warn('[updateActivity] Cannot change activity type');
+      return null;
+    }
+
+    const updatedActivity: T = {
+      ...oldActivity,
       ...activity,
       id,
       updatedAt: Date.now(),
@@ -87,6 +110,10 @@ export async function updateActivity(
 
     await AsyncStorage.setItem(ACTIVITY_KEY, JSON.stringify(updated));
 
+    if (__DEV__) {
+      console.log('[updateActivity] Updated activity', id);
+    }
+
     return updatedActivity;
   } catch (err) {
     console.error('[updateActivity] Failed to update activity:', err);
@@ -94,7 +121,7 @@ export async function updateActivity(
   }
 }
 
-// Get all activities for a kid
+// Get all activities for a specific kid by kidId
 export async function getActivitiesForKid(kidId: string): Promise<Activity[]> {
   try {
     const all = await getAllActivities();
@@ -105,12 +132,15 @@ export async function getActivitiesForKid(kidId: string): Promise<Activity[]> {
   }
 }
 
-// Optional: Delete activity by ID
+// Delete activity by id
 export async function deleteActivity(id: string): Promise<boolean> {
   try {
     const existing = await getAllActivities();
     const filtered = existing.filter((a) => a.id !== id);
     await AsyncStorage.setItem(ACTIVITY_KEY, JSON.stringify(filtered));
+    if (__DEV__) {
+      console.log('[deleteActivity] Deleted activity with id:', id);
+    }
     return true;
   } catch (err) {
     console.error('[deleteActivity] Failed:', err);
@@ -118,11 +148,13 @@ export async function deleteActivity(id: string): Promise<boolean> {
   }
 }
 
-// Optional: Clear all (for dev/testing only)
+// Clear all activities (for dev/testing only)
 export async function clearAllActivities(): Promise<void> {
   try {
     await AsyncStorage.removeItem(ACTIVITY_KEY);
-    console.log('[clearAllActivities] All activities cleared');
+    if (__DEV__) {
+      console.log('[clearAllActivities] All activities cleared');
+    }
   } catch (err) {
     console.error('[clearAllActivities] Error:', err);
   }

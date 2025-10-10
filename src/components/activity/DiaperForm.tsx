@@ -3,14 +3,14 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Checkbox, Button, Text } from 'react-native-paper';
 import { Activity } from '../../types/Activity';
+import { DiaperActivity, OmitMeta } from '../../types/Activity';
 
 interface DiaperFormProps {
-  onSubmit: (
-    activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'kidId'>
-  ) => void;
+  onSubmit: (activity: OmitMeta<DiaperActivity>) => void;
+  initialData?: OmitMeta<DiaperActivity>;
 }
 
-export default function DiaperForm({ onSubmit }: DiaperFormProps) {
+export default function DiaperForm({ onSubmit, initialData }: DiaperFormProps) {
   const [wet, setWet] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [timestamp] = useState(Date.now());
@@ -20,9 +20,15 @@ export default function DiaperForm({ onSubmit }: DiaperFormProps) {
       alert('Please select at least one option.');
       return;
     }
+    if (!initialData?.kidId) {
+      alert('Kid ID is missing');
+      return;
+    }
+
     onSubmit({
       type: 'diaper',
       timestamp,
+      kidId: initialData.kidId,
       details: { wet, dirty },
     });
   };

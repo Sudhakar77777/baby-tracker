@@ -3,31 +3,63 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Button, TextInput, RadioButton } from 'react-native-paper';
 import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
 import dayjs from 'dayjs';
-import { Activity } from '../../types/Activity';
+
+import { FeedingDetails, FeedingMethod, BreastSide } from '../../types/Feeding';
 
 interface FeedingFormProps {
   onSubmit: (
-    activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'kidId'>
+    activity: Omit<
+      {
+        type: 'feeding';
+        timestamp: number;
+        details: FeedingDetails;
+      },
+      'kidId' | 'id' | 'createdAt' | 'updatedAt'
+    >
   ) => void;
+  initialData?: Omit<
+    {
+      type: 'feeding';
+      timestamp: number;
+      details: FeedingDetails;
+    },
+    'kidId' | 'id' | 'createdAt' | 'updatedAt'
+  >;
 }
 
-export default function FeedingForm({ onSubmit }: FeedingFormProps) {
-  const [method, setMethod] = useState<'breast' | 'bottle' | 'ebm'>('breast');
-  const [side, setSide] = useState<'left' | 'right' | 'both'>('left');
-  const [amount, setAmount] = useState<string>(''); // ml
-  const [timestamp, setTimestamp] = useState<Date>(new Date());
+export default function FeedingForm({
+  onSubmit,
+  initialData,
+}: FeedingFormProps) {
+  // use constants from FeedingMethod and BreastSide
+  const [method, setMethod] = useState<FeedingMethod>(
+    initialData?.details.method ?? FeedingMethod.BREAST
+  );
+
+  const [side, setSide] = useState<BreastSide>(
+    initialData?.details.side ?? BreastSide.LEFT
+  );
+
+  const [amount, setAmount] = useState<string>(
+    initialData?.details.amount?.toString() ?? ''
+  );
+
+  const [timestamp, setTimestamp] = useState<Date>(
+    initialData ? new Date(initialData.timestamp) : new Date()
+  );
 
   const [openDatePicker, setOpenDatePicker] = useState(false);
   const [openTimePicker, setOpenTimePicker] = useState(false);
 
   const handleSubmit = () => {
     if (
-      (method === 'bottle' || method === 'ebm') &&
+      (method === FeedingMethod.BOTTLE || method === FeedingMethod.EBM) &&
       (!amount || isNaN(Number(amount)) || Number(amount) <= 0)
     ) {
       alert('Please enter a valid amount in ml.');
       return;
     }
+
     onSubmit({
       type: 'feeding',
       timestamp: timestamp.getTime(),
@@ -41,7 +73,7 @@ export default function FeedingForm({ onSubmit }: FeedingFormProps) {
 
   function handleConfirmDate({ date }: { date: Date | undefined }) {
     setOpenDatePicker(false);
-    if (!date) return; // bail if undefined
+    if (!date) return;
 
     const newDate = dayjs(timestamp)
       .year(date.getFullYear())
@@ -56,24 +88,28 @@ export default function FeedingForm({ onSubmit }: FeedingFormProps) {
     <View>
       <Text style={styles.label}>Feeding Method</Text>
       <RadioButton.Group
-        onValueChange={(val) => setMethod(val as any)}
+        onValueChange={(val) => setMethod(val as FeedingMethod)}
         value={method}
       >
         <View style={styles.radioRow}>
-          <RadioButton value="breast" />
+          <RadioButton value={FeedingMethod.BREAST} />
           <Text style={styles.radioLabel}>Breast</Text>
         </View>
         <View style={styles.radioRow}>
-          <RadioButton value="bottle" />
+          <RadioButton value={FeedingMethod.BOTTLE} />
           <Text style={styles.radioLabel}>Bottle</Text>
         </View>
         <View style={styles.radioRow}>
-          <RadioButton value="ebm" />
+          <RadioButton value={FeedingMethod.EBM} />
           <Text style={styles.radioLabel}>Expressed Breast Milk (EBM)</Text>
+        </View>
+        <View style={styles.radioRow}>
+          <RadioButton value={FeedingMethod.SOLID} />
+          <Text style={styles.radioLabel}>Solid</Text>
         </View>
       </RadioButton.Group>
 
-      {(method === 'bottle' || method === 'ebm') && (
+      {(method === FeedingMethod.BOTTLE || method === FeedingMethod.EBM) && (
         <>
           <TextInput
             label="Amount (ml)"
@@ -86,23 +122,23 @@ export default function FeedingForm({ onSubmit }: FeedingFormProps) {
         </>
       )}
 
-      {(method === 'breast' || method === 'ebm') && (
+      {(method === FeedingMethod.BREAST || method === FeedingMethod.EBM) && (
         <>
           <Text style={styles.label}>Side</Text>
           <RadioButton.Group
-            onValueChange={(val) => setSide(val as any)}
+            onValueChange={(val) => setSide(val as BreastSide)}
             value={side}
           >
             <View style={styles.radioRow}>
-              <RadioButton value="left" />
+              <RadioButton value={BreastSide.LEFT} />
               <Text style={styles.radioLabel}>Left</Text>
             </View>
             <View style={styles.radioRow}>
-              <RadioButton value="right" />
+              <RadioButton value={BreastSide.RIGHT} />
               <Text style={styles.radioLabel}>Right</Text>
             </View>
             <View style={styles.radioRow}>
-              <RadioButton value="both" />
+              <RadioButton value={BreastSide.BOTH} />
               <Text style={styles.radioLabel}>Both</Text>
             </View>
           </RadioButton.Group>

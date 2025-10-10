@@ -1,33 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { Activity } from '../../types/Activity';
+
+import { SleepActivity } from '../../types/Activity';
+import { OmitMeta } from '../../types/Activity';
 
 dayjs.extend(duration);
 
 interface SleepFormProps {
-  onSubmit: (
-    activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'kidId'>
-  ) => void;
+  onSubmit: (activity: OmitMeta<SleepActivity>) => void;
+  initialData?: OmitMeta<SleepActivity>;
 }
 
-export default function SleepForm({ onSubmit }: SleepFormProps) {
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [startTime, setStartTime] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [endTime, setEndTime] = useState<Date | undefined>(undefined);
+export default function SleepForm({ onSubmit, initialData }: SleepFormProps) {
+  const [startDate, setStartDate] = useState<Date>(
+    initialData ? new Date(initialData.details.start) : new Date()
+  );
+  const [startTime, setStartTime] = useState<Date>(
+    initialData ? new Date(initialData.details.start) : new Date()
+  );
+  const [endDate, setEndDate] = useState<Date>(
+    initialData ? new Date(initialData.details.end) : new Date()
+  );
+  const [endTime, setEndTime] = useState<Date>(
+    initialData ? new Date(initialData.details.end) : new Date()
+  );
 
   const [openStartDate, setOpenStartDate] = useState(false);
   const [openStartTime, setOpenStartTime] = useState(false);
   const [openEndDate, setOpenEndDate] = useState(false);
   const [openEndTime, setOpenEndTime] = useState(false);
 
-  // Combine date and time to full Date object
-  const combineDateTime = (date: Date | undefined, time: Date | undefined) => {
-    if (!date || !time) return undefined;
+  const combineDateTime = (date: Date, time: Date): Date => {
     return dayjs(date)
       .hour(time.getHours())
       .minute(time.getMinutes())
@@ -40,14 +47,11 @@ export default function SleepForm({ onSubmit }: SleepFormProps) {
     const start = combineDateTime(startDate, startTime);
     const end = combineDateTime(endDate, endTime);
 
-    if (!start || !end) {
-      Alert.alert('Please select both start and end date & time.');
-      return;
-    }
     if (end <= start) {
       Alert.alert('End time must be after start time.');
       return;
     }
+
     const durationMinutes = Math.round(
       (end.getTime() - start.getTime()) / 60000
     );
@@ -55,15 +59,17 @@ export default function SleepForm({ onSubmit }: SleepFormProps) {
     onSubmit({
       type: 'sleep',
       timestamp: start.getTime(),
-      duration: durationMinutes,
-      details: { start: start.getTime(), end: end.getTime() },
+      duration: durationMinutes, // in minutes
+      details: {
+        start: start.getTime(),
+        end: end.getTime(),
+      },
+      kidId: initialData?.kidId!,
     });
   };
 
-  const formatDate = (date: Date | undefined) =>
-    date ? dayjs(date).format('YYYY-MM-DD') : '';
-  const formatTime = (date: Date | undefined) =>
-    date ? dayjs(date).format('HH:mm') : '';
+  const formatDate = (date: Date) => dayjs(date).format('YYYY-MM-DD');
+  const formatTime = (date: Date) => dayjs(date).format('HH:mm');
 
   return (
     <View>
@@ -74,7 +80,6 @@ export default function SleepForm({ onSubmit }: SleepFormProps) {
           placeholder="Select start date"
           value={formatDate(startDate)}
           style={[styles.input, styles.disabledInput]}
-          pointerEvents="none"
         />
       </TouchableOpacity>
       <DatePickerModal
@@ -84,8 +89,8 @@ export default function SleepForm({ onSubmit }: SleepFormProps) {
         onDismiss={() => setOpenStartDate(false)}
         date={startDate}
         onConfirm={({ date }) => {
+          if (date) setStartDate(date);
           setOpenStartDate(false);
-          setStartDate(date);
         }}
         validRange={{ endDate: new Date() }}
       />
@@ -96,23 +101,20 @@ export default function SleepForm({ onSubmit }: SleepFormProps) {
           placeholder="Select start time"
           value={formatTime(startTime)}
           style={[styles.input, styles.disabledInput]}
-          pointerEvents="none"
         />
       </TouchableOpacity>
       <TimePickerModal
         visible={openStartTime}
         onDismiss={() => setOpenStartTime(false)}
         onConfirm={({ hours, minutes }) => {
+          const newTime = dayjs(startTime)
+            .hour(hours)
+            .minute(minutes)
+            .second(0)
+            .millisecond(0)
+            .toDate();
+          setStartTime(newTime);
           setOpenStartTime(false);
-          const d = startTime || new Date();
-          setStartTime(
-            dayjs(d)
-              .hour(hours)
-              .minute(minutes)
-              .second(0)
-              .millisecond(0)
-              .toDate()
-          );
         }}
       />
 
@@ -123,7 +125,6 @@ export default function SleepForm({ onSubmit }: SleepFormProps) {
           placeholder="Select end date"
           value={formatDate(endDate)}
           style={[styles.input, styles.disabledInput]}
-          pointerEvents="none"
         />
       </TouchableOpacity>
       <DatePickerModal
@@ -133,8 +134,8 @@ export default function SleepForm({ onSubmit }: SleepFormProps) {
         onDismiss={() => setOpenEndDate(false)}
         date={endDate}
         onConfirm={({ date }) => {
+          if (date) setEndDate(date);
           setOpenEndDate(false);
-          setEndDate(date);
         }}
         validRange={{ endDate: new Date() }}
       />
@@ -145,23 +146,20 @@ export default function SleepForm({ onSubmit }: SleepFormProps) {
           placeholder="Select end time"
           value={formatTime(endTime)}
           style={[styles.input, styles.disabledInput]}
-          pointerEvents="none"
         />
       </TouchableOpacity>
       <TimePickerModal
         visible={openEndTime}
         onDismiss={() => setOpenEndTime(false)}
         onConfirm={({ hours, minutes }) => {
+          const newTime = dayjs(endTime)
+            .hour(hours)
+            .minute(minutes)
+            .second(0)
+            .millisecond(0)
+            .toDate();
+          setEndTime(newTime);
           setOpenEndTime(false);
-          const d = endTime || new Date();
-          setEndTime(
-            dayjs(d)
-              .hour(hours)
-              .minute(minutes)
-              .second(0)
-              .millisecond(0)
-              .toDate()
-          );
         }}
       />
 

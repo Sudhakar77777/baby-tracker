@@ -3,20 +3,29 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { TextInput, Button, RadioButton } from 'react-native-paper';
 import { DatePickerModal } from 'react-native-paper-dates';
 import dayjs from 'dayjs';
-import { Activity } from '../../types/Activity';
+import { MedicationActivity, OmitMeta } from '../../types/Activity';
+import { MedicationUnit } from '../../types/Medication';
 
 interface MedicationFormProps {
-  onSubmit: (
-    activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'kidId'>
-  ) => void;
+  onSubmit: (activity: OmitMeta<MedicationActivity>) => void;
+  initialData?: OmitMeta<MedicationActivity>;
 }
 
-export default function MedicationForm({ onSubmit }: MedicationFormProps) {
-  const [medicationName, setMedicationName] = useState('');
-  const [dose, setDose] = useState('');
-  const [reason, setReason] = useState('');
-  const [unit, setUnit] = useState<'ml' | 'drops' | 'tablet'>('ml');
-  const [date, setDate] = useState<Date | undefined>(undefined);
+export default function MedicationForm({
+  onSubmit,
+  initialData,
+}: MedicationFormProps) {
+  const [medicationName, setMedicationName] = useState(
+    initialData?.details.name ?? ''
+  );
+  const [dose, setDose] = useState(initialData?.details.dose ?? '');
+  const [reason, setReason] = useState(initialData?.details.reason ?? '');
+  const [unit, setUnit] = useState<MedicationUnit>(
+    initialData?.details.unit ?? 'ml'
+  );
+  const [date, setDate] = useState<Date | undefined>(
+    initialData ? new Date(initialData.timestamp) : undefined
+  );
   const [openDatePicker, setOpenDatePicker] = useState(false);
 
   const handleSubmit = () => {
@@ -32,13 +41,19 @@ export default function MedicationForm({ onSubmit }: MedicationFormProps) {
       alert('Please select a date.');
       return;
     }
+    if (!initialData?.kidId) {
+      alert('Kid ID is missing');
+      return;
+    }
 
     onSubmit({
       type: 'medication',
       timestamp: date.getTime(),
+      kidId: initialData.kidId,
       details: {
         name: medicationName.trim(),
         dose: dose.trim(),
+        unit,
         reason: reason.trim() || undefined,
       },
     });

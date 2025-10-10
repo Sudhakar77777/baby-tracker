@@ -7,6 +7,7 @@ import {
   addActivity,
   updateActivity,
   deleteActivity,
+  NewActivity,
 } from '../storage/activities';
 
 interface AppContextType {
@@ -79,24 +80,52 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addNewActivity = async (
-    activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>
-  ) => {
-    await addActivity(activity);
-    await reloadActivities();
+  const addNewActivity = async (activity: NewActivity) => {
+    try {
+      const added = await addActivity(activity);
+      if (!added) {
+        console.warn('[AppContext] Failed to add new activity');
+      }
+    } catch (error) {
+      console.error('[AppContext] Error adding new activity:', error);
+    } finally {
+      await reloadActivities();
+    }
   };
 
   const updateExistingActivity = async (
     id: string,
     activity: Partial<Activity>
   ) => {
-    await updateActivity(id, activity);
-    await reloadActivities();
+    try {
+      const updated = await updateActivity(id, activity);
+      if (!updated) {
+        console.warn(`[AppContext] Failed to update activity with id ${id}`);
+      }
+    } catch (error) {
+      console.error(
+        `[AppContext] Error updating activity with id ${id}:`,
+        error
+      );
+    } finally {
+      await reloadActivities();
+    }
   };
 
   const deleteExistingActivity = async (id: string) => {
-    await deleteActivity(id);
-    await reloadActivities();
+    try {
+      const success = await deleteActivity(id);
+      if (!success) {
+        console.warn(`[AppContext] Failed to delete activity with id ${id}`);
+      }
+    } catch (error) {
+      console.error(
+        `[AppContext] Error deleting activity with id ${id}:`,
+        error
+      );
+    } finally {
+      await reloadActivities();
+    }
   };
 
   // Load data initially

@@ -3,17 +3,21 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { DatePickerModal } from 'react-native-paper-dates';
 import dayjs from 'dayjs';
-import { Activity } from '../../types/Activity';
+import { MilestoneActivity, OmitMeta } from '../../types/Activity';
 
 interface MilestoneFormProps {
-  onSubmit: (
-    activity: Omit<Activity, 'id' | 'createdAt' | 'updatedAt' | 'kidId'>
-  ) => void;
+  onSubmit: (activity: OmitMeta<MilestoneActivity>) => void;
+  initialData?: OmitMeta<MilestoneActivity>;
 }
 
-export default function MilestoneForm({ onSubmit }: MilestoneFormProps) {
-  const [event, setEvent] = useState('');
-  const [date, setDate] = useState<Date | undefined>(undefined);
+export default function MilestoneForm({
+  onSubmit,
+  initialData,
+}: MilestoneFormProps) {
+  const [event, setEvent] = useState(initialData?.details.event ?? '');
+  const [date, setDate] = useState<Date | undefined>(
+    initialData ? new Date(initialData.timestamp) : undefined
+  );
   const [openDatePicker, setOpenDatePicker] = useState(false);
 
   const handleSubmit = () => {
@@ -25,9 +29,15 @@ export default function MilestoneForm({ onSubmit }: MilestoneFormProps) {
       alert('Please select a date.');
       return;
     }
+    if (!initialData?.kidId) {
+      alert('Kid ID is missing');
+      return;
+    }
+
     onSubmit({
       type: 'milestone',
       timestamp: date.getTime(),
+      kidId: initialData.kidId,
       details: { event: event.trim() },
     });
   };
