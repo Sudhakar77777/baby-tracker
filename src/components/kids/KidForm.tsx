@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { Kid } from '../types/Kid';
+import { Kid } from '../../types/Kid';
 import { DatePickerModal } from 'react-native-paper-dates';
 import { Button, RadioButton } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';

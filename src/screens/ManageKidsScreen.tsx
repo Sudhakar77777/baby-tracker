@@ -1,5 +1,5 @@
 // ManageKidsScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,15 @@ import {
   FlatList,
 } from 'react-native';
 import { Kid } from '../types/Kid';
-import { addKid, getAllKids, deleteKid, updateKid } from '../storage/kids';
-import dayjs from 'dayjs';
-import KidsList from '../components/KidsList';
-import KidForm from '../components/KidForm';
+import KidsList from '../components/kids/KidsList';
+import KidForm from '../components/kids/KidForm';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { AppContext } from '../context/AppContext';
 
 export default function ManageKidsScreen() {
-  const [kids, setKids] = useState<Kid[]>([]);
+  const { kids, reloadKids, addNewKid, updateExistingKid, deleteExistingKid } =
+    useContext(AppContext)!;
+
   const [loading, setLoading] = useState(false);
 
   const [editingKid, setEditingKid] = useState<Kid | null>(null);
@@ -35,33 +36,16 @@ export default function ManageKidsScreen() {
     onCancel: () => {},
   });
 
-  // Load kids list from storage
-  const loadKids = async () => {
-    setLoading(true);
-    try {
-      const data = await getAllKids();
-      setKids(data);
-    } catch (error) {
-      console.error('Failed to load kids', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadKids();
-  }, []);
-
   // Add or update kid handler
   const handleSaveKid = async (kid: Omit<Kid, 'id'>, id?: string) => {
     setLoading(true);
     try {
       if (id) {
-        await updateKid(id, kid.name, kid.birthdate, kid.gender, kid.photoUri);
+        await updateExistingKid(id, kid);
       } else {
-        await addKid(kid.name, kid.birthdate, kid.gender, kid.photoUri);
+        await addNewKid(kid);
       }
-      await loadKids();
+      await reloadKids();
       setIsFormVisible(false);
       setEditingKid(null);
     } catch (error) {
@@ -80,8 +64,8 @@ export default function ManageKidsScreen() {
       onConfirm: async () => {
         setLoading(true);
         try {
-          await deleteKid(id);
-          await loadKids();
+          await deleteExistingKid(id);
+          await reloadKids();
         } catch (error) {
           console.error('Failed to delete kid', error);
         } finally {

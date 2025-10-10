@@ -1,6 +1,6 @@
 import React from 'react';
 import { FlatList, View, StyleSheet } from 'react-native';
-import { Kid } from '../types/Kid';
+import { Kid } from '../../types/Kid';
 import { List, IconButton, Divider } from 'react-native-paper';
 import { Image, Text } from 'react-native';
 import dayjs from 'dayjs';
