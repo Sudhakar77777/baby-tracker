@@ -184,7 +184,7 @@ export default function ManageActivityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12, backgroundColor: '#fff' },
+  container: { flex: 1, padding: 12, backgroundColor: 'transparent' },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
   addButton: {
     position: 'absolute',

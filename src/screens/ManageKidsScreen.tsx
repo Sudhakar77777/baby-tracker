@@ -1,12 +1,7 @@
 // ManageKidsScreen.tsx
 import React, { useEffect, useState, useContext } from 'react';
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  FlatList,
-} from 'react-native';
+import { View, ActivityIndicator, StyleSheet, FlatList } from 'react-native';
+import AppText from '../components/AppText';
 import { Kid } from '../types/Kid';
 import KidsList from '../components/kids/KidsList';
 import KidForm from '../components/kids/KidForm';
@@ -96,11 +91,11 @@ export default function ManageKidsScreen() {
       {loading && (
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#6200ee" />
-          <Text style={{ textAlign: 'center' }}>Loading...</Text>
+          <AppText style={{ textAlign: 'center' }}>Loading...</AppText>
         </View>
       )}
 
-      <Text style={styles.title}>Kids List:</Text>
+      <AppText style={styles.title}>Kids List:</AppText>
 
       <KidsList
         kids={kids}
@@ -112,14 +107,14 @@ export default function ManageKidsScreen() {
       {/* Add Kid Floating Button */}
       {!isFormVisible && (
         <View style={styles.fabContainer}>
-          <Text
+          <AppText
             onPress={openAddForm}
             style={styles.fab}
             accessibilityRole="button"
             accessibilityLabel="Add Kid"
           >
             ➕ Add Kid
-          </Text>
+          </AppText>
         </View>
       )}
 
@@ -151,7 +146,11 @@ export default function ManageKidsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   loading: { marginVertical: 10 },
-  title: { fontSize: 18, marginBottom: 10, fontWeight: '600' },
+  title: {
+    fontSize: 28,
+    marginBottom: 10,
+    fontWeight: '600',
+  },
   fabContainer: {
     position: 'absolute',
     bottom: 30,

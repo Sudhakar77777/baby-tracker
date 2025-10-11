@@ -3,10 +3,11 @@ import {
   View,
   TextInput,
   StyleSheet,
-  Text,
   TouchableOpacity,
   Image,
 } from 'react-native';
+import AppText from '../AppText';
+import AppRadioButtonItem from '../AppRadioButtonItem';
 import { Kid } from '../../types/Kid';
 import { DatePickerModal } from 'react-native-paper-dates';
 import { Button, RadioButton } from 'react-native-paper';
@@ -81,7 +82,9 @@ export default function KidForm({
   return (
     <View style={styles.modalContent}>
       {/* Title */}
-      <Text style={styles.modalTitle}>{kid ? 'Edit Kid' : 'Add Kid'}</Text>
+      <AppText style={styles.modalTitle}>
+        {kid ? 'Edit Kid' : 'Add Kid'}
+      </AppText>
       {/* Name */}
       <TextInput
         placeholder="Name"
@@ -95,9 +98,9 @@ export default function KidForm({
         onPress={pickImage}
         buttonColor="#FF9800"
         textColor="#fff"
-        labelStyle={{ fontWeight: 'bold', fontSize: 16 }}
+        labelStyle={{ fontFamily: 'PatrickHandSC', fontSize: 16 }}
       >
-        Pick Photo
+        <AppText>Pick Photo</AppText>
       </Button>
       <View style={{ height: 10 }} />
       {photoUri ? (
@@ -125,15 +128,15 @@ export default function KidForm({
         />
       </TouchableOpacity>
       {/* Gender */}
-      <Text style={{ marginTop: 10 }}>Gender:</Text>
+      <AppText style={{ marginTop: 10 }}>Gender:</AppText>
       <RadioButton.Group
         onValueChange={(value) => setGender(value as 'boy' | 'girl' | 'other')}
         value={gender}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <RadioButton.Item label="Boy" value="boy" />
-          <RadioButton.Item label="Girl" value="girl" />
-          <RadioButton.Item label="Other" value="other" />
+          <AppRadioButtonItem label="Boy" value="boy" />
+          <AppRadioButtonItem label="Girl" value="girl" />
+          <AppRadioButtonItem label="Other" value="other" />
         </View>
       </RadioButton.Group>
       {/* Save & Cancel Buttons */}
@@ -144,7 +147,7 @@ export default function KidForm({
           disabled={!name || !birthdate || loading}
           buttonColor="blue"
           textColor="#fff"
-          labelStyle={{ fontWeight: 'bold', fontSize: 16 }}
+          labelStyle={{ fontFamily: 'PatrickHandSC', fontSize: 16 }}
         >
           {kid ? 'Update Kid' : 'Add Kid'}
         </Button>
@@ -154,7 +157,7 @@ export default function KidForm({
             onPress={onCancel}
             buttonColor="gray"
             textColor="#fff"
-            labelStyle={{ fontWeight: 'bold', fontSize: 16 }}
+            labelStyle={{ fontFamily: 'PatrickHandSC', fontSize: 16 }}
             disabled={loading}
           >
             Cancel
@@ -173,7 +176,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     marginBottom: 15,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -181,6 +184,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
+    fontFamily: 'PatrickHandSC',
     padding: 8,
     marginBottom: 10,
     borderRadius: 5,

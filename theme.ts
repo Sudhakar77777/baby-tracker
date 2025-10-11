@@ -8,12 +8,14 @@ export const customTheme = {
     ...DefaultTheme.colors,
     primary: '#FF8800', // your orange
     accent: '#FF8800',
+    background: 'transparent',
+    surface: 'transparent',
   },
   fonts: {
     ...DefaultTheme.fonts,
-    regular: { fontFamily: 'System', fontWeight: '800' }, // normal
-    medium: { fontFamily: 'System', fontWeight: '800' }, // semi-bold
-    light: { fontFamily: 'System', fontWeight: '800' }, // light
-    thin: { fontFamily: 'System', fontWeight: '800' }, // thin
+    regular: { fontFamily: 'PatrickHandSC' },
+    medium: { fontFamily: 'PatrickHandSC' },
+    light: { fontFamily: 'PatrickHandSC' },
+    thin: { fontFamily: 'PatrickHandSC' },
   },
 };

@@ -149,7 +149,7 @@ const ActivityForm: React.FC<Props> = ({
         onPress={handlePress}
       >
         <View style={styles.activityIconWrapper}>
-          <Icon name={ACTIVITY_ICONS[type]} size={120} color="#6200ee" />
+          <Icon name={ACTIVITY_ICONS[type]} size={50} color="#6200ee" />
         </View>
         <Text style={styles.activityTypeText}>{type.toUpperCase()}</Text>
 
@@ -310,7 +310,7 @@ export default ActivityForm;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    // backgroundColor: '#fff',
     paddingHorizontal: 12,
     paddingTop: 12,
   },
@@ -396,22 +396,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#bdda79ff',
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'column',
   },
   activityIconWrapper: {
-    marginBottom: 6,
+    marginBottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    width: 120,
-    height: 120,
+    width: 60,
   },
   activityTypeCardSelected: {
     borderWidth: 2,
     borderColor: '#6200ee',
   },
   activityTypeText: {
-    marginTop: 10,
-    fontWeight: '700',
-    fontSize: 16,
+    marginTop: 0,
+    marginBottom: 2,
+    fontWeight: '800',
+    fontSize: 8,
     color: '#6200ee',
   },
   backButton: {
