@@ -33,10 +33,10 @@ export default function KidsList({
         return (
           <View style={[styles.card, genderStyle]}>
             <List.Item
-              title={`${item.name} — ${dayjs(item.birthdate).format(
-                'MMM D, YYYY'
-              )}`}
-              description={item.gender ? capitalize(item.gender) : undefined}
+              title={`${item.name}`}
+              description={`${dayjs(item.birthdate).format('MMM D, YYYY')}${
+                item.gender ? `  ${capitalize(item.gender)}` : ''
+              }`}
               left={(props) =>
                 item.photoUri ? (
                   <Image
@@ -87,10 +87,11 @@ const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingLeft: 12,
+    paddingRight: 8,
     paddingVertical: 8,
     marginVertical: 6,
-    marginHorizontal: 12,
+    marginHorizontal: 4,
     elevation: 3, // Android shadow
     // ✅ New boxShadow
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.12)',
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     width: 80,
-    paddingRight: 4,
+    paddingRight: 0,
   },
   actionIcon: {
     marginHorizontal: 0,
