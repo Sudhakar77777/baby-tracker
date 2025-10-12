@@ -25,7 +25,7 @@ export const defaultMedicationsByStage: Record<BabyStage, MedicationDetails[]> =
   {
     [BabyStage.NEWBORN]: [
       { name: 'Vitamin D', dose: '400 IU' },
-      { name: 'Iron', dose: 'as prescribed' },
+      { name: 'Iron', dose: '3ml' },
     ],
     [BabyStage.INFANT]: [{ name: 'Vitamin D', dose: '400 IU' }],
     [BabyStage.TODDLER]: [],

@@ -18,9 +18,9 @@ export default function MedicationForm({
   kidId,
 }: MedicationFormProps) {
   const [medicationName, setMedicationName] = useState(
-    initialData?.details.name ?? ''
+    initialData?.details.name ?? 'Vitamin D'
   );
-  const [dose, setDose] = useState(initialData?.details.dose ?? '');
+  const [dose, setDose] = useState(initialData?.details.dose ?? '5');
   const [reason, setReason] = useState(initialData?.details.reason ?? '');
   const [unit, setUnit] = useState<MedicationUnit>(
     initialData?.details.unit ?? 'ml'
