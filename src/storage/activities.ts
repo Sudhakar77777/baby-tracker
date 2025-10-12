@@ -18,6 +18,7 @@ import {
 } from '../types/Activity';
 
 const ACTIVITY_KEY = 'activity_list';
+const LAST_SELECTED_KID_KEY = 'last_selected_kid_id';
 
 // Utility: Safely parse JSON string to Activity[]
 function safeParse(json: string | null): Activity[] {
@@ -159,5 +160,22 @@ export async function clearAllActivities(): Promise<void> {
     }
   } catch (err) {
     console.error('[clearAllActivities] Error:', err);
+  }
+}
+
+export async function setLastSelectedKidId(kidId: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LAST_SELECTED_KID_KEY, kidId);
+  } catch (err) {
+    console.error('[setLastSelectedKidId] Failed:', err);
+  }
+}
+
+export async function getLastSelectedKidId(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(LAST_SELECTED_KID_KEY);
+  } catch (err) {
+    console.error('[getLastSelectedKidId] Failed:', err);
+    return null;
   }
 }

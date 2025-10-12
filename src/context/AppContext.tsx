@@ -7,14 +7,16 @@ import {
   addActivity,
   updateActivity,
   deleteActivity,
+  setLastSelectedKidId,
+  getLastSelectedKidId,
 } from '../storage/activities';
 import { NewActivity } from '../types/Activity';
 
 interface AppContextType {
   kids: Kid[];
   activities: Activity[];
-  selectedKid: Kid | null;
-  setSelectedKid: (kid: Kid | null) => void;
+  lastSelectedKid: Kid | null;
+  setLastSelectedKid: (kid: Kid | null) => void;
 
   reloadKids: () => Promise<void>;
   addNewKid: (kid: Omit<Kid, 'id'>) => Promise<void>;
@@ -35,16 +37,28 @@ export const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [kids, setKids] = useState<Kid[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [selectedKid, setSelectedKid] = useState<Kid | null>(null);
+  const [lastSelectedKid, setLastSelectedKid] = useState<Kid | null>(null);
+
+  const resolveLastSelectedKid = async (kids: Kid[]): Promise<Kid | null> => {
+    const lastKidId = await getLastSelectedKidId();
+
+    if (kids.length === 0) return null;
+
+    const matchedKid = kids.find((k) => k.id === lastKidId);
+    if (matchedKid) return matchedKid;
+
+    if (kids.length === 1) return kids[0];
+
+    return null;
+  };
 
   // --- Kids handlers ---
   const reloadKids = async () => {
     try {
       const data = await getAllKids();
       setKids(data);
-      if (selectedKid && !data.find((k) => k.id === selectedKid.id)) {
-        setSelectedKid(null);
-      }
+      const resolvedKid = await resolveLastSelectedKid(data);
+      setLastSelectedKid(resolvedKid);
     } catch (error) {
       console.error('Failed to load kids in context', error);
     }
@@ -63,9 +77,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const deleteExistingKid = async (id: string) => {
     await deleteKid(id);
     await reloadKids();
-    if (selectedKid?.id === id) {
-      setSelectedKid(null);
-    }
   };
 
   // --- Activities handlers ---
@@ -73,6 +84,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const data = await getAllActivities();
       setActivities(data);
+      // Resolve last selected kid using the same logic as reloadKids
+      const resolvedKid = await resolveLastSelectedKid(kids);
+      setLastSelectedKid(resolvedKid);
     } catch (error) {
       console.error('Failed to load activities in context', error);
     }
@@ -83,6 +97,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const added = await addActivity(activity);
       if (!added) {
         console.warn('[AppContext] Failed to add new activity');
+      } else {
+        await setLastSelectedKidId(activity.kidId);
       }
     } catch (error) {
       console.error('[AppContext] Error adding new activity:', error);
@@ -129,8 +145,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Load data initially
   useEffect(() => {
-    reloadKids();
-    reloadActivities();
+    const loadData = async () => {
+      await reloadKids();
+      await reloadActivities();
+    };
+    loadData();
   }, []);
 
   return (
@@ -138,8 +157,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       value={{
         kids,
         activities,
-        selectedKid,
-        setSelectedKid,
+        lastSelectedKid,
+        setLastSelectedKid,
         reloadKids,
         addNewKid,
         updateExistingKid,

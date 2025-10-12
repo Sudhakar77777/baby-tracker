@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   Text,
@@ -30,7 +30,10 @@ import SleepForm from './SleepForm';
 import BathForm from './BathForm';
 import NoteForm from './NoteForm';
 import MilestoneForm from './MilestoneForm';
-import { initialWindowMetrics } from 'react-native-safe-area-context';
+
+const screenWidth = Dimensions.get('window').width;
+const CARD_3_SIZE = (screenWidth - 12 * 6) / 3; // 3 cards per row
+const CARD_4_SIZE = (screenWidth - 12 * 6) / 4; // 4 cards per row
 
 interface Props {
   existingActivity?: NewActivity;
@@ -38,19 +41,16 @@ interface Props {
   onCancel: () => void;
 }
 
-const screenWidth = Dimensions.get('window').width;
-const CARD_3_SIZE = (screenWidth - 12 * 6) / 3; // 3 cards per row
-const CARD_5_SIZE = (screenWidth - 12 * 6) / 4; // 5 cards per row
-
 const ActivityForm: React.FC<Props> = ({
   existingActivity,
   onSubmit,
   onCancel,
 }) => {
-  const { kids } = useContext(AppContext)!;
+  const { kids, lastSelectedKid } = useContext(AppContext)!;
 
+  // Initialize selectedKid: prefer existingActivity.kidId, else lastSelectedKid?.id, else null
   const [selectedKid, setSelectedKid] = useState<string | null>(
-    existingActivity?.kidId || null
+    existingActivity?.kidId || lastSelectedKid?.id || null
   );
   const [selectedType, setSelectedType] = useState<ActivityType | null>(
     existingActivity?.type || null
@@ -132,12 +132,9 @@ const ActivityForm: React.FC<Props> = ({
       setSelectedType(type);
 
       if (selectedKid) {
-        console.log('Kid selected:', selectedKid, 'Proceeding to form...');
         setTimeout(() => {
           setFormOpen(true);
-        }, 500);
-      } else {
-        console.log('No kid selected yet.');
+        }, 300);
       }
     };
 
@@ -340,7 +337,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#6200ee',
     backgroundColor: '#e8def8', // light purple background to highlight
-    boxShadow: '0px 2px 4px rgba(98, 0, 238, 0.5)',
     shadowColor: '#6200ee',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
@@ -354,8 +350,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 2,
-    boxShadow: '0px 1px 2px rgba(98, 0, 238, 0.4)',
-    // Optional: add shadow for better visibility
     shadowColor: '#6200ee',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.4,
@@ -392,8 +386,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   activityTypeCard: {
-    width: CARD_5_SIZE,
-    height: CARD_5_SIZE,
+    width: CARD_4_SIZE,
+    height: CARD_4_SIZE,
     margin: 6,
     borderRadius: 8,
     backgroundColor: '#bdda79ff',
