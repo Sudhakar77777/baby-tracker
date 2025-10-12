@@ -34,9 +34,9 @@ function getDetailsSummary(item: Activity): string {
 
   switch (type) {
     case 'note':
-      return `Note: ${details.content || ''}`;
+      return `${details.content || ''}`;
     case 'feeding':
-      return `Method: ${details.method}${
+      return `${details.method}${
         details.amount ? `, ${details.amount}ml` : ''
       }`;
     case 'sleep':
@@ -53,7 +53,7 @@ function getDetailsSummary(item: Activity): string {
     case 'bath':
       return 'Bath given';
     case 'milestone':
-      return `Milestone: ${details.event || ''}`;
+      return `${details.event || ''}`;
     default:
       return '';
   }
@@ -73,13 +73,6 @@ function ActivityList(props: ActivityListProps) {
     return (
       <View style={styles.itemContainer}>
         <View style={styles.left}>
-          <Icon
-            name={iconMap[item.type]}
-            size={36}
-            color="#6200ee"
-            style={styles.icon}
-          />
-
           {kid?.photoUri ? (
             <Image source={{ uri: kid.photoUri }} style={styles.kidPhoto} />
           ) : (
@@ -90,19 +83,25 @@ function ActivityList(props: ActivityListProps) {
               style={styles.kidPhoto}
             />
           )}
+          <Icon
+            name={iconMap[item.type]}
+            size={36}
+            color="#6200ee"
+            style={styles.icon}
+          />
 
           <View style={styles.textContainer}>
             <Text style={styles.type}>{item.type}</Text>
-            <Text style={styles.kidId}>Kid ID: {item.kidId}</Text>
+            {/* <Text style={styles.kidId}>Kid ID: {item.kidId}</Text> */}
             <Text style={styles.timestamp}>
               {dayjs(item.timestamp).format('MMM D, h:mm A')}
             </Text>
-            <Text style={styles.timestampSmall}>
+            {/* <Text style={styles.timestampSmall}>
               Created: {dayjs(item.createdAt).format('MMM D, h:mm A')}
             </Text>
             <Text style={styles.timestampSmall}>
               Updated: {dayjs(item.updatedAt).format('MMM D, h:mm A')}
-            </Text>
+            </Text> */}
             <Text style={styles.details}>{getDetailsSummary(item)}</Text>
           </View>
         </View>
@@ -161,11 +160,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   kidPhoto: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderRadius: 14,
     marginRight: 8,
-    marginTop: 6,
+    marginTop: 8,
     backgroundColor: '#eee',
     textAlign: 'center',
     textAlignVertical: 'center',

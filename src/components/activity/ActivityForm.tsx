@@ -39,7 +39,8 @@ interface Props {
 }
 
 const screenWidth = Dimensions.get('window').width;
-const CARD_SIZE = (screenWidth - 12 * 6) / 5; // 5 cards per row
+const CARD_3_SIZE = (screenWidth - 12 * 6) / 3; // 3 cards per row
+const CARD_5_SIZE = (screenWidth - 12 * 6) / 4; // 5 cards per row
 
 const ActivityForm: React.FC<Props> = ({
   existingActivity,
@@ -310,7 +311,7 @@ export default ActivityForm;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: '#fff',
+    backgroundColor: '#F3E5F5',
     paddingHorizontal: 12,
     paddingTop: 12,
   },
@@ -326,8 +327,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   kidCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE + 32, // more space for name
+    width: CARD_3_SIZE,
+    height: CARD_3_SIZE + 32, // more space for name
     margin: 6,
     borderRadius: 8,
     backgroundColor: '#bdda79ff',
@@ -362,14 +363,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   kidPhoto: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
+    width: CARD_3_SIZE,
+    height: CARD_3_SIZE,
     borderRadius: 8,
     resizeMode: 'cover',
   },
   kidIconContainer: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
+    width: CARD_3_SIZE,
+    height: CARD_3_SIZE,
     borderRadius: 8,
     backgroundColor: '#ddd',
     justifyContent: 'center',
@@ -379,7 +380,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
     fontWeight: '600',
     fontSize: 14,
-    maxWidth: CARD_SIZE - 12,
+    maxWidth: CARD_3_SIZE - 12,
     textAlign: 'center',
     flexShrink: 1,
     color: '#333',
@@ -391,8 +392,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   activityTypeCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
+    width: CARD_5_SIZE,
+    height: CARD_5_SIZE,
     margin: 6,
     borderRadius: 8,
     backgroundColor: '#bdda79ff',
@@ -414,7 +415,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
     marginBottom: 2,
     fontWeight: '800',
-    fontSize: 8,
+    fontSize: 10,
     color: '#6200ee',
   },
   backButton: {

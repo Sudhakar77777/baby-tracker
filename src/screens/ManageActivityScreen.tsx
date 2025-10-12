@@ -2,12 +2,11 @@ import React, { useContext, useState } from 'react';
 import {
   View,
   StyleSheet,
-  Text,
   Modal,
-  TouchableOpacity,
   Alert,
   ScrollView,
   Image,
+  Pressable,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getFallbackIconForKid } from '../utils/kidUtils';
@@ -15,6 +14,7 @@ import { AppContext } from '../context/AppContext';
 import { Activity, NewActivity } from '../types/Activity';
 import ActivityList from '../components/activity/ActivityList';
 import ActivityForm from '../components/activity/ActivityForm';
+import AppText from '../components/AppText';
 
 export default function ManageActivityScreen() {
   const {
@@ -74,21 +74,23 @@ export default function ManageActivityScreen() {
   };
 
   const handleDelete = (id: string) => {
-    const confirmAndDelete = async () => {
-      try {
-        await deleteExistingActivity(id);
-        console.log('Deleted activity id:', id);
-      } catch (error) {
-        console.error('Error deleting activity:', error);
-      }
-    };
-
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this activity?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: confirmAndDelete },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteExistingActivity(id);
+              console.log('Deleted activity id:', id);
+            } catch (error) {
+              console.error('Error deleting activity:', error);
+            }
+          },
+        },
       ]
     );
   };
@@ -96,13 +98,15 @@ export default function ManageActivityScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Today's Activities</Text>
+        <AppText style={styles.title}>Today's Activities</AppText>
+
+        {/* Kid Filter */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.kidFilterScroll}
         >
-          <TouchableOpacity
+          <Pressable
             onPress={() => setSelectedKidFilter(null)}
             style={styles.kidFilterItem}
           >
@@ -111,10 +115,10 @@ export default function ManageActivityScreen() {
               size={28}
               color={selectedKidFilter === null ? '#6200ee' : '#999'}
             />
-          </TouchableOpacity>
+          </Pressable>
 
           {kids.map((kid) => (
-            <TouchableOpacity
+            <Pressable
               key={kid.id}
               onPress={() => setSelectedKidFilter(kid.id)}
               style={styles.kidFilterItem}
@@ -136,11 +140,12 @@ export default function ManageActivityScreen() {
                   style={styles.kidFilterFallbackIcon}
                 />
               )}
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </ScrollView>
       </View>
 
+      {/* Activity List */}
       <ActivityList
         activities={todayActivities}
         onEdit={(activity) => {
@@ -152,16 +157,23 @@ export default function ManageActivityScreen() {
         onDelete={handleDelete}
       />
 
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => {
-          setEditingActivity(undefined);
-          setModalVisible(true);
-        }}
-      >
-        <Icon name="plus-circle" size={56} color="#6200ee" />
-      </TouchableOpacity>
+      {/* Floating Add Button */}
+      {!modalVisible && (
+        <View style={styles.fabContainer}>
+          <Pressable
+            onPress={() => {
+              setEditingActivity(undefined);
+              setModalVisible(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Add Activity"
+          >
+            <AppText style={styles.fab}>➕ Add Activity</AppText>
+          </Pressable>
+        </View>
+      )}
 
+      {/* Modal for Activity Form */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -186,15 +198,7 @@ export default function ManageActivityScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12, backgroundColor: 'transparent' },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
-  addButton: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    zIndex: 10,
-  },
-  headerRow: {
-    marginBottom: 12,
-  },
+  headerRow: { marginBottom: 12 },
   kidFilterScroll: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -221,5 +225,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
     borderRadius: 14,
     padding: 2,
+  },
+  fabContainer: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+  },
+  fab: {
+    fontSize: 24,
+    backgroundColor: '#6200ee',
+    color: 'white',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    overflow: 'hidden',
+    textAlign: 'center',
   },
 });

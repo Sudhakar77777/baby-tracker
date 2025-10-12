@@ -1,6 +1,5 @@
-// ManageKidsScreen.tsx
-import React, { useEffect, useState, useContext } from 'react';
-import { View, ActivityIndicator, StyleSheet, FlatList } from 'react-native';
+import React, { useContext, useState, useCallback } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import AppText from '../components/AppText';
 import { Kid } from '../types/Kid';
 import KidsList from '../components/kids/KidsList';
@@ -9,21 +8,13 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { AppContext } from '../context/AppContext';
 
 export default function ManageKidsScreen() {
-  const { kids, reloadKids, addNewKid, updateExistingKid, deleteExistingKid } =
+  const { kids, addNewKid, updateExistingKid, deleteExistingKid, reloadKids } =
     useContext(AppContext)!;
 
   const [loading, setLoading] = useState(false);
-
   const [editingKid, setEditingKid] = useState<Kid | null>(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
-
-  const [confirmationData, setConfirmationData] = useState<{
-    visible: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-  }>({
+  const [confirmationData, setConfirmationData] = useState({
     visible: false,
     title: '',
     message: '',
@@ -31,60 +22,62 @@ export default function ManageKidsScreen() {
     onCancel: () => {},
   });
 
-  // Add or update kid handler
-  const handleSaveKid = async (kid: Omit<Kid, 'id'>, id?: string) => {
-    setLoading(true);
-    try {
-      if (id) {
-        await updateExistingKid(id, kid);
-      } else {
-        await addNewKid(kid);
-      }
-      await reloadKids();
-      setIsFormVisible(false);
-      setEditingKid(null);
-    } catch (error) {
-      console.error('Failed to save kid', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Delete kid handler
-  const handleDeleteKid = (id: string) => {
-    setConfirmationData({
-      visible: true,
-      title: 'Confirm Delete',
-      message: 'Are you sure you want to delete this kid?',
-      onConfirm: async () => {
-        setLoading(true);
-        try {
-          await deleteExistingKid(id);
-          await reloadKids();
-        } catch (error) {
-          console.error('Failed to delete kid', error);
-        } finally {
-          setLoading(false);
-          setConfirmationData((prev) => ({ ...prev, visible: false }));
+  const handleSaveKid = useCallback(
+    async (kid: Omit<Kid, 'id'>, id?: string) => {
+      setLoading(true);
+      try {
+        if (id) {
+          await updateExistingKid(id, kid);
+        } else {
+          await addNewKid(kid);
         }
-      },
-      onCancel: () => {
-        setConfirmationData((prev) => ({ ...prev, visible: false }));
-      },
-    });
-  };
+        // reloadKids might be unnecessary if context updates on its own
+        await reloadKids();
+        setIsFormVisible(false);
+        setEditingKid(null);
+      } catch (error) {
+        console.error('Failed to save kid:', error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [addNewKid, updateExistingKid, reloadKids]
+  );
 
-  // Open form for adding new kid
-  const openAddForm = () => {
+  const handleDeleteKid = useCallback(
+    (id: string) => {
+      setConfirmationData({
+        visible: true,
+        title: 'Confirm Delete',
+        message: 'Are you sure you want to delete this kid?',
+        onConfirm: async () => {
+          setLoading(true);
+          try {
+            await deleteExistingKid(id);
+            await reloadKids();
+          } catch (error) {
+            console.error('Failed to delete kid', error);
+          } finally {
+            setLoading(false);
+            setConfirmationData((prev) => ({ ...prev, visible: false }));
+          }
+        },
+        onCancel: () =>
+          setConfirmationData((prev) => ({ ...prev, visible: false })),
+      });
+    },
+    [deleteExistingKid, reloadKids]
+  );
+
+  const openAddForm = useCallback(() => {
     setEditingKid(null);
     setIsFormVisible(true);
-  };
+  }, []);
 
-  // Open form for editing existing kid
-  const openEditForm = (kid: Kid) => {
+  const openEditForm = useCallback((kid: Kid) => {
     setEditingKid(kid);
     setIsFormVisible(true);
-  };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -104,8 +97,7 @@ export default function ManageKidsScreen() {
         loading={loading}
       />
 
-      {/* Add Kid Floating Button */}
-      {!isFormVisible && (
+      {!isFormVisible && !loading && (
         <View style={styles.fabContainer}>
           <AppText
             onPress={openAddForm}
@@ -118,7 +110,6 @@ export default function ManageKidsScreen() {
         </View>
       )}
 
-      {/* Kid Add/Edit Form */}
       {isFormVisible && (
         <KidForm
           kid={editingKid}
@@ -131,7 +122,6 @@ export default function ManageKidsScreen() {
         />
       )}
 
-      {/* Generic Confirmation Modal */}
       <ConfirmationModal
         visible={confirmationData.visible}
         title={confirmationData.title}
@@ -145,7 +135,9 @@ export default function ManageKidsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-  loading: { marginVertical: 10 },
+  loading: {
+    marginVertical: 10,
+  },
   title: {
     fontSize: 28,
     marginBottom: 10,

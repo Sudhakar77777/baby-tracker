@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import AppText from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -15,12 +15,27 @@ type HomeScreenNavigationProp = NativeStackNavigationProp<
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
 
+  const goToActivity = useCallback(() => {
+    navigation.navigate('Activity');
+  }, [navigation]);
+
+  const goToKids = useCallback(() => {
+    navigation.navigate('Kids');
+  }, [navigation]);
+
+  const showWIPAlert = useCallback((featureName: string) => {
+    Alert.alert(
+      `${featureName} is coming soon!`,
+      'This feature is under development.',
+      [{ text: 'OK' }]
+    );
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Top Section: Activity */}
         <Pressable
-          onPress={() => navigation.navigate('Activity')}
+          onPress={goToActivity}
           style={({ pressed }) => [
             styles.button,
             styles.activityButton,
@@ -32,9 +47,7 @@ export default function HomeScreen() {
         </Pressable>
 
         <Pressable
-          onPress={() => {
-            // Navigate to Reports screen
-          }}
+          onPress={() => showWIPAlert('Reports')}
           style={({ pressed }) => [
             styles.button,
             styles.reportsButton,
@@ -46,9 +59,7 @@ export default function HomeScreen() {
         </Pressable>
 
         <Pressable
-          onPress={() => {
-            // Handle download action
-          }}
+          onPress={() => showWIPAlert('Download')}
           style={({ pressed }) => [
             styles.button,
             styles.downloadButton,
@@ -64,7 +75,7 @@ export default function HomeScreen() {
 
         <View style={styles.bottomButtons}>
           <Pressable
-            onPress={() => navigation.navigate('Kids')}
+            onPress={goToKids}
             style={({ pressed }) => [
               styles.setupButton,
               styles.settingsButton,
@@ -76,7 +87,7 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => {}}
+            onPress={() => showWIPAlert('Meds')}
             style={({ pressed }) => [
               styles.setupButton,
               styles.settingsButton,
@@ -88,7 +99,7 @@ export default function HomeScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => {}}
+            onPress={() => showWIPAlert('Vaccines')}
             style={({ pressed }) => [
               styles.setupButton,
               styles.settingsButton,

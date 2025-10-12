@@ -9,7 +9,7 @@ export const customTheme = {
     primary: '#FF8800', // your orange
     accent: '#FF8800',
     background: 'transparent',
-    surface: 'transparent',
+    surface: '#F3E5F5',
   },
   fonts: {
     ...DefaultTheme.fonts,
