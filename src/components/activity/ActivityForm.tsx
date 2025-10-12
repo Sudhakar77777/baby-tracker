@@ -339,6 +339,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#6200ee',
     backgroundColor: '#e8def8', // light purple background to highlight
+    boxShadow: '0px 2px 4px rgba(98, 0, 238, 0.5)',
     shadowColor: '#6200ee',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
@@ -352,6 +353,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 2,
+    boxShadow: '0px 1px 2px rgba(98, 0, 238, 0.4)',
     // Optional: add shadow for better visibility
     shadowColor: '#6200ee',
     shadowOffset: { width: 0, height: 1 },

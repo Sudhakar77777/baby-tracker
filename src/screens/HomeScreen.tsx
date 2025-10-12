@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  ImageBackground,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import AppText from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -23,68 +17,87 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.separator} />
-      {/* Main Buttons */}
       <View style={styles.content}>
         {/* Top Section: Activity */}
-        <TouchableOpacity
-          style={[styles.button, styles.activityButton]}
+        <Pressable
           onPress={() => navigation.navigate('Activity')}
+          style={({ pressed }) => [
+            styles.button,
+            styles.activityButton,
+            pressed && styles.pressed,
+          ]}
         >
           <Icon name="plus-circle-outline" size={36} color="#fff" />
           <AppText style={styles.buttonText}>Track Activity</AppText>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
-          style={[styles.button, styles.reportsButton]}
+        <Pressable
           onPress={() => {
             // Navigate to Reports screen
           }}
+          style={({ pressed }) => [
+            styles.button,
+            styles.reportsButton,
+            pressed && styles.pressed,
+          ]}
         >
           <Icon name="file-document-outline" size={32} color="#fff" />
           <AppText style={styles.buttonText}>Reports</AppText>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
-          style={[styles.button, styles.downloadButton]}
+        <Pressable
           onPress={() => {
             // Handle download action
           }}
+          style={({ pressed }) => [
+            styles.button,
+            styles.downloadButton,
+            pressed && styles.pressed,
+          ]}
         >
           <Icon name="download" size={32} color="#fff" />
           <AppText style={styles.buttonText}>Download</AppText>
-        </TouchableOpacity>
+        </Pressable>
 
-        {/* Bottom Section: Setup */}
         <View style={styles.separator} />
-
         <AppText style={styles.setupsLabel}>Setup:</AppText>
 
         <View style={styles.bottomButtons}>
-          <TouchableOpacity
-            style={[styles.setupButton, styles.settingsButton]}
+          <Pressable
             onPress={() => navigation.navigate('Kids')}
+            style={({ pressed }) => [
+              styles.setupButton,
+              styles.settingsButton,
+              pressed && styles.pressed,
+            ]}
           >
-            <Icon name="account-child" size={28} color="#fff" />
+            <Icon name="account-child" size={32} color="#fff" />
             <AppText style={styles.setupButtonText}>Kids</AppText>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
-            style={[styles.setupButton, styles.settingsButton]}
+          <Pressable
             onPress={() => {}}
+            style={({ pressed }) => [
+              styles.setupButton,
+              styles.settingsButton,
+              pressed && styles.pressed,
+            ]}
           >
-            <Icon name="pill" size={28} color="#fff" />
+            <Icon name="pill" size={32} color="#fff" />
             <AppText style={styles.setupButtonText}>Meds</AppText>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
-            style={[styles.setupButton, styles.settingsButton]}
+          <Pressable
             onPress={() => {}}
+            style={({ pressed }) => [
+              styles.setupButton,
+              styles.settingsButton,
+              pressed && styles.pressed,
+            ]}
           >
-            <Icon name="needle" size={28} color="#fff" />
+            <Icon name="needle" size={32} color="#fff" />
             <AppText style={styles.setupButtonText}>Vaccines</AppText>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>
@@ -96,26 +109,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    // backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    backgroundColor: 'transparent',
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    marginRight: 10,
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#6200ee',
-  },
   content: {
     flex: 1,
     padding: 20,
@@ -126,10 +119,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f48fb1',
   },
   reportsButton: {
-    backgroundColor: '#ce93d8', // purple-ish
+    backgroundColor: '#ce93d8',
   },
   downloadButton: {
-    backgroundColor: '#81d4fa', // light blue-ish
+    backgroundColor: '#81d4fa',
   },
   settingsButton: {
     backgroundColor: '#3a91d8ff',
@@ -140,14 +133,17 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     marginBottom: 14,
+    boxShadow: '2px 2px 5px rgba(0, 0, 0, 0.1)',
+    // fallback for older iOS
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 2, height: 2 },
     shadowRadius: 5,
+    elevation: 3, // for Android
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     marginLeft: 12,
   },
@@ -177,8 +173,11 @@ const styles = StyleSheet.create({
   },
   setupButtonText: {
     marginTop: 6,
-    fontSize: 14,
+    fontSize: 20,
     color: '#fff',
     textAlign: 'center',
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });

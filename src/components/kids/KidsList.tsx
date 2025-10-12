@@ -92,6 +92,9 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     marginHorizontal: 12,
     elevation: 3, // Android shadow
+    // ✅ New boxShadow
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.12)',
+    // ⛔️ Deprecated, but kept for backward compatibility
     shadowColor: '#000', // iOS shadow
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
