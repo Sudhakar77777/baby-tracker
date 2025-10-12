@@ -48,6 +48,7 @@ export interface DiaperActivity extends BaseActivity {
   details: {
     wet?: boolean;
     dirty?: boolean;
+    notes?: string;
   };
 }
 

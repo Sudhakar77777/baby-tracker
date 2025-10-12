@@ -37,22 +37,24 @@ function getDetailsSummary(item: Activity): string {
     case 'note':
       return `${details.content || ''}`;
     case 'feeding':
-      return `${details.method}${
+      return `${details.method}, ${details.milkType}${
         details.amount ? `, ${details.amount}ml` : ''
       }`;
     case 'sleep':
-      const durationMins = details.duration
-        ? Math.round(details.duration / 60000)
-        : 0;
-      return `Duration: ${durationMins} min`;
+      const durationMins = details.duration ?? 0;
+      const hours = Math.floor(durationMins / 60);
+      const minutes = durationMins % 60;
+      return `Duration: ${hours}h ${minutes}m`;
     case 'diaper':
       const wet = details.wet ? 'Wet' : '';
       const dirty = details.dirty ? 'Dirty' : '';
-      return [wet, dirty].filter(Boolean).join(', ') || 'Dry';
+      const status = [wet, dirty].filter(Boolean).join(', ') || 'Dry';
+      const notes = details.notes ? `: ${details.notes}` : '';
+      return status + notes;
     case 'medication':
       return `${details.name} - ${details.dose}`;
     case 'bath':
-      return 'Bath given';
+      return 'Taken' + (details.content ? `: ${details.content}` : '');
     case 'milestone':
       return `${details.event || ''}`;
     default:
@@ -62,6 +64,8 @@ function getDetailsSummary(item: Activity): string {
 
 function ActivityList({ activities, onEdit, onDelete }: ActivityListProps) {
   const { kids } = React.useContext(AppContext)!;
+
+  console.log('Activities passed to ActivityList:', activities);
 
   if (activities.length === 0) {
     return <Text style={styles.empty}>No activities found.</Text>;
@@ -87,7 +91,7 @@ function ActivityList({ activities, onEdit, onDelete }: ActivityListProps) {
 
           <Icon
             name={iconMap[item.type]}
-            size={36}
+            size={18}
             color="#6200ee"
             style={styles.icon}
           />
@@ -98,12 +102,10 @@ function ActivityList({ activities, onEdit, onDelete }: ActivityListProps) {
             <Text style={styles.timestamp}>
               {dayjs(item.timestamp).format('MMM D, h:mm A')}
             </Text>
-            {/* <Text style={styles.timestampSmall}>
-              Created: {dayjs(item.createdAt).format('MMM D, h:mm A')}
-            </Text>
+
             <Text style={styles.timestampSmall}>
               Updated: {dayjs(item.updatedAt).format('MMM D, h:mm A')}
-            </Text> */}
+            </Text>
             <Text style={styles.details}>{getDetailsSummary(item)}</Text>
           </View>
         </View>
@@ -204,17 +206,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   timestamp: {
-    fontSize: 13,
+    fontSize: 10,
     color: '#555',
   },
   timestampSmall: {
-    fontSize: 12,
+    fontSize: 8,
     color: '#999',
   },
   details: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#444',
-    marginTop: 6,
+    marginTop: 0,
     fontStyle: 'italic',
   },
   actions: {

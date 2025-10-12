@@ -1,8 +1,7 @@
 // src/components/activities/DiaperForm.tsx
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Checkbox, Button, Text } from 'react-native-paper';
-import { Activity } from '../../types/Activity';
+import { Checkbox, Button, Text, TextInput } from 'react-native-paper';
 import { DiaperActivity, OmitMeta } from '../../types/Activity';
 
 interface DiaperFormProps {
@@ -16,8 +15,9 @@ export default function DiaperForm({
   initialData,
   kidId,
 }: DiaperFormProps) {
-  const [wet, setWet] = useState(false);
-  const [dirty, setDirty] = useState(false);
+  const [wet, setWet] = useState(initialData?.details.wet ?? false);
+  const [dirty, setDirty] = useState(initialData?.details.dirty ?? false);
+  const [notes, setNotes] = useState(initialData?.details.notes ?? '');
   const [timestamp] = useState(Date.now());
 
   const handleSubmit = () => {
@@ -29,7 +29,7 @@ export default function DiaperForm({
       type: 'diaper',
       timestamp,
       kidId,
-      details: { wet, dirty },
+      details: { wet, dirty, notes: notes.trim() ? notes : undefined },
     });
   };
 
@@ -50,6 +50,16 @@ export default function DiaperForm({
         />
         <Text style={styles.checkboxLabel}>Dirty</Text>
       </View>
+
+      <TextInput
+        label="Notes (optional)"
+        mode="outlined"
+        multiline
+        numberOfLines={3}
+        value={notes}
+        onChangeText={setNotes}
+        style={styles.notesInput}
+      />
 
       <Button
         mode="contained"
@@ -75,6 +85,10 @@ const styles = StyleSheet.create({
   },
   checkboxLabel: {
     fontSize: 16,
+  },
+  notesInput: {
+    marginTop: 12,
+    backgroundColor: 'white',
   },
   submitButton: {
     marginTop: 24,

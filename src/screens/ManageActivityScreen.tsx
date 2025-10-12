@@ -20,11 +20,9 @@ export default function ManageActivityScreen() {
   const {
     activities,
     kids,
-    selectedKid,
     addNewActivity,
     updateExistingActivity,
     deleteExistingActivity,
-    setSelectedKid,
   } = useContext(AppContext)!;
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -151,8 +149,6 @@ export default function ManageActivityScreen() {
         onEdit={(activity) => {
           setEditingActivity(activity);
           setModalVisible(true);
-          const kidObj = kids.find((k) => k.id === activity.kidId);
-          if (kidObj) setSelectedKid(kidObj);
         }}
         onDelete={handleDelete}
       />

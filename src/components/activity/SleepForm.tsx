@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, Pressable, Alert } from 'react-native';
 import { TextInput, Button } from 'react-native-paper';
 import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
 import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
 
 import { SleepActivity } from '../../types/Activity';
 import { OmitMeta } from '../../types/Activity';
-
-dayjs.extend(duration);
 
 interface SleepFormProps {
   onSubmit: (activity: OmitMeta<SleepActivity>) => void;
@@ -21,17 +18,36 @@ export default function SleepForm({
   initialData,
   kidId,
 }: SleepFormProps) {
+  // Default start date is yesterday
+  const defaultStartDate = dayjs().subtract(1, 'day').startOf('day').toDate();
+  // Default start time 9pm yesterday
+  const defaultStartTime = dayjs(defaultStartDate)
+    .hour(21)
+    .minute(0)
+    .second(0)
+    .toDate();
+
+  // Default end date today
+  const defaultEndDate = dayjs().startOf('day').toDate();
+  // Default end time 6am today
+  const defaultEndTime = dayjs(defaultEndDate)
+    .hour(6)
+    .minute(0)
+    .second(0)
+    .toDate();
+
+  // States for date and time pickers
   const [startDate, setStartDate] = useState<Date>(
-    initialData ? new Date(initialData.details.start) : new Date()
+    initialData ? new Date(initialData.details.start) : defaultStartDate
   );
   const [startTime, setStartTime] = useState<Date>(
-    initialData ? new Date(initialData.details.start) : new Date()
+    initialData ? new Date(initialData.details.start) : defaultStartTime
   );
   const [endDate, setEndDate] = useState<Date>(
-    initialData ? new Date(initialData.details.end) : new Date()
+    initialData ? new Date(initialData.details.end) : defaultEndDate
   );
   const [endTime, setEndTime] = useState<Date>(
-    initialData ? new Date(initialData.details.end) : new Date()
+    initialData ? new Date(initialData.details.end) : defaultEndTime
   );
 
   const [openStartDate, setOpenStartDate] = useState(false);
@@ -39,6 +55,16 @@ export default function SleepForm({
   const [openEndDate, setOpenEndDate] = useState(false);
   const [openEndTime, setOpenEndTime] = useState(false);
 
+  // Duration override fields (hours and minutes)
+  const [overrideHours, setOverrideHours] = useState<string>('');
+  const [overrideMinutes, setOverrideMinutes] = useState<string>('');
+
+  // Store total override duration in minutes internally
+  const [overrideMinutesTotal, setOverrideMinutesTotal] = useState<
+    number | null
+  >(null);
+
+  // Helper to combine date and time into one Date object
   const combineDateTime = (date: Date, time: Date): Date => {
     return dayjs(date)
       .hour(time.getHours())
@@ -48,45 +74,104 @@ export default function SleepForm({
       .toDate();
   };
 
+  // Compute duration in minutes between start and end datetime
+  const computedDurationMinutes = Math.round(
+    (combineDateTime(endDate, endTime).getTime() -
+      combineDateTime(startDate, startTime).getTime()) /
+      60000
+  );
+
+  // When duration override changes, update the overrideMinutesTotal accordingly
+  useEffect(() => {
+    if (overrideHours === '' && overrideMinutes === '') {
+      setOverrideMinutesTotal(null);
+      return; // no override
+    }
+    const h = parseInt(overrideHours) || 0;
+    const m = parseInt(overrideMinutes) || 0;
+    if (h < 0 || m < 0 || m > 59) return; // invalid input, ignore
+    setOverrideMinutesTotal(h * 60 + m);
+  }, [overrideHours, overrideMinutes]);
+
+  // When overrideMinutesTotal changes, update override fields accordingly
+  useEffect(() => {
+    if (overrideMinutesTotal === null) {
+      setOverrideHours('');
+      setOverrideMinutes('');
+    } else {
+      const h = Math.floor(overrideMinutesTotal / 60);
+      const m = overrideMinutesTotal % 60;
+      setOverrideHours(h.toString());
+      setOverrideMinutes(m.toString().padStart(2, '0'));
+    }
+  }, [overrideMinutesTotal]);
+
+  // On submit, use override duration if set, else computed duration
   const handleSubmit = () => {
     const start = combineDateTime(startDate, startTime);
     const end = combineDateTime(endDate, endTime);
 
-    if (end <= start) {
+    // Validate end is after start if override not used or <= 0
+    if ((!overrideMinutesTotal || overrideMinutesTotal <= 0) && end <= start) {
       Alert.alert('End time must be after start time.');
       return;
     }
 
-    const durationMinutes = Math.round(
-      (end.getTime() - start.getTime()) / 60000
-    );
+    // Determine final duration (in minutes)
+    const finalDuration = overrideMinutesTotal ?? computedDurationMinutes;
+
+    // If override is used, compute end time from start + override duration
+    const finalEnd = overrideMinutesTotal
+      ? dayjs(start).add(overrideMinutesTotal, 'minute').toDate()
+      : end;
 
     onSubmit({
       type: 'sleep',
-      timestamp: start.getTime(),
+      timestamp: Date.now(), // **current time on save**
       details: {
         start: start.getTime(),
-        end: end.getTime(),
-        duration: durationMinutes, // in minutes
+        end: finalEnd.getTime(),
+        duration: finalDuration,
       },
       kidId,
     });
   };
 
+  // Formatters
   const formatDate = (date: Date) => dayjs(date).format('YYYY-MM-DD');
   const formatTime = (date: Date) => dayjs(date).format('HH:mm');
 
   return (
     <View>
-      <Text style={styles.label}>Sleep Start</Text>
-      <TouchableOpacity onPress={() => setOpenStartDate(true)}>
-        <TextInput
-          editable={false}
-          placeholder="Select start date"
-          value={formatDate(startDate)}
-          style={[styles.input, styles.disabledInput]}
-        />
-      </TouchableOpacity>
+      {/* Sleep Begin */}
+      <Text style={styles.sectionHeader}>Sleep Begin</Text>
+      <View style={styles.row}>
+        <Pressable
+          onPress={() => setOpenStartDate(true)}
+          style={[styles.dateTimePicker, { marginRight: 12 }]}
+        >
+          <TextInput
+            mode="flat"
+            label="Date"
+            editable={false}
+            value={formatDate(startDate)}
+            style={styles.flexInput}
+          />
+        </Pressable>
+        <Pressable
+          onPress={() => setOpenStartTime(true)}
+          style={styles.dateTimePicker}
+        >
+          <TextInput
+            mode="flat"
+            label="Time"
+            editable={false}
+            value={formatTime(startTime)}
+            style={styles.flexInput}
+          />
+        </Pressable>
+      </View>
+
       <DatePickerModal
         locale="en"
         mode="single"
@@ -100,14 +185,6 @@ export default function SleepForm({
         validRange={{ endDate: new Date() }}
       />
 
-      <TouchableOpacity onPress={() => setOpenStartTime(true)}>
-        <TextInput
-          editable={false}
-          placeholder="Select start time"
-          value={formatTime(startTime)}
-          style={[styles.input, styles.disabledInput]}
-        />
-      </TouchableOpacity>
       <TimePickerModal
         visible={openStartTime}
         onDismiss={() => setOpenStartTime(false)}
@@ -121,17 +198,39 @@ export default function SleepForm({
           setStartTime(newTime);
           setOpenStartTime(false);
         }}
+        hours={startTime.getHours()}
+        minutes={startTime.getMinutes()}
       />
 
-      <Text style={styles.label}>Sleep End</Text>
-      <TouchableOpacity onPress={() => setOpenEndDate(true)}>
-        <TextInput
-          editable={false}
-          placeholder="Select end date"
-          value={formatDate(endDate)}
-          style={[styles.input, styles.disabledInput]}
-        />
-      </TouchableOpacity>
+      {/* Sleep End */}
+      <Text style={styles.sectionHeader}>Sleep End</Text>
+      <View style={styles.row}>
+        <Pressable
+          onPress={() => setOpenEndDate(true)}
+          style={[styles.dateTimePicker, { marginRight: 12 }]}
+        >
+          <TextInput
+            mode="flat"
+            label="Date"
+            editable={false}
+            value={formatDate(endDate)}
+            style={styles.flexInput}
+          />
+        </Pressable>
+        <Pressable
+          onPress={() => setOpenEndTime(true)}
+          style={styles.dateTimePicker}
+        >
+          <TextInput
+            mode="flat"
+            label="Time"
+            editable={false}
+            value={formatTime(endTime)}
+            style={styles.flexInput}
+          />
+        </Pressable>
+      </View>
+
       <DatePickerModal
         locale="en"
         mode="single"
@@ -145,14 +244,6 @@ export default function SleepForm({
         validRange={{ endDate: new Date() }}
       />
 
-      <TouchableOpacity onPress={() => setOpenEndTime(true)}>
-        <TextInput
-          editable={false}
-          placeholder="Select end time"
-          value={formatTime(endTime)}
-          style={[styles.input, styles.disabledInput]}
-        />
-      </TouchableOpacity>
       <TimePickerModal
         visible={openEndTime}
         onDismiss={() => setOpenEndTime(false)}
@@ -166,7 +257,46 @@ export default function SleepForm({
           setEndTime(newTime);
           setOpenEndTime(false);
         }}
+        hours={endTime.getHours()}
+        minutes={endTime.getMinutes()}
       />
+
+      {/* Computed Duration (read-only) */}
+      <Text style={styles.sectionHeader}>Duration (computed)</Text>
+      <Text style={styles.durationText}>
+        {Math.floor(computedDurationMinutes / 60)}h{' '}
+        {computedDurationMinutes % 60}m
+      </Text>
+
+      {/* Override Duration Inputs */}
+      <Text style={styles.sectionHeader}>
+        Override Duration (hours, minutes)
+      </Text>
+      <View style={styles.row}>
+        <TextInput
+          mode="flat"
+          label="Hours"
+          keyboardType="numeric"
+          style={[styles.flexInput, { marginRight: 8 }]}
+          value={overrideHours}
+          onChangeText={(text) => {
+            if (/^\d*$/.test(text)) setOverrideHours(text);
+          }}
+          placeholder="0"
+        />
+        <TextInput
+          mode="flat"
+          label="Minutes"
+          keyboardType="numeric"
+          style={styles.flexInput}
+          value={overrideMinutes}
+          onChangeText={(text) => {
+            if (/^\d*$/.test(text) && Number(text) < 60)
+              setOverrideMinutes(text);
+          }}
+          placeholder="0"
+        />
+      </View>
 
       <Button
         mode="contained"
@@ -180,17 +310,29 @@ export default function SleepForm({
 }
 
 const styles = StyleSheet.create({
-  input: {
-    marginTop: 12,
-  },
-  disabledInput: {
-    backgroundColor: '#f9f9f9',
-  },
-  label: {
-    marginTop: 16,
+  sectionHeader: {
+    marginTop: 20,
     fontWeight: '600',
+    fontSize: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    marginTop: 8,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  dateTimePicker: {
+    flex: 0.45,
+  },
+  flexInput: {
+    flex: 1,
+  },
+  durationText: {
+    marginTop: 8,
+    fontSize: 18,
+    fontWeight: '500',
   },
   submitButton: {
-    marginTop: 24,
+    marginTop: 32,
   },
 });
