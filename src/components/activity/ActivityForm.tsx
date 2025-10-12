@@ -5,8 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
-  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -31,9 +29,8 @@ import BathForm from './BathForm';
 import NoteForm from './NoteForm';
 import MilestoneForm from './MilestoneForm';
 
-const screenWidth = Dimensions.get('window').width;
-const CARD_3_SIZE = (screenWidth - 12 * 6) / 3; // 3 cards per row
-const CARD_4_SIZE = (screenWidth - 12 * 6) / 4; // 4 cards per row
+import SelectableKidCard from './SelectableKidCard';
+import SelectableActivityCard from './SelectableActivityCard';
 
 interface Props {
   existingActivity?: NewActivity;
@@ -48,7 +45,6 @@ const ActivityForm: React.FC<Props> = ({
 }) => {
   const { kids, lastSelectedKid } = useContext(AppContext)!;
 
-  // Initialize selectedKid: prefer existingActivity.kidId, else lastSelectedKid?.id, else null
   const [selectedKid, setSelectedKid] = useState<string | null>(
     existingActivity?.kidId || lastSelectedKid?.id || null
   );
@@ -57,7 +53,14 @@ const ActivityForm: React.FC<Props> = ({
   );
   const [formOpen, setFormOpen] = useState<boolean>(!!existingActivity);
 
-  // Add kidId before submitting
+  useEffect(() => {
+    if (!selectedKid && kids.length > 0) {
+      const defaultKidId =
+        existingActivity?.kidId || lastSelectedKid?.id || kids[0]?.id;
+      setSelectedKid(defaultKidId);
+    }
+  }, [kids]);
+
   const handleSubmit = (activityData: Omit<NewActivity, 'kidId'>) => {
     if (!selectedKid) {
       alert('Please select a kid');
@@ -71,96 +74,6 @@ const ActivityForm: React.FC<Props> = ({
     setFormOpen(false);
   };
 
-  // Kid card component
-  const KidCard = ({ kid }: { kid: (typeof kids)[0] }) => {
-    const hasPhoto = !!kid.photoUri;
-    const isSelected = selectedKid === kid.id;
-
-    return (
-      <TouchableOpacity
-        style={[styles.kidCard, isSelected && styles.kidCardSelected]}
-        onPress={() => {
-          setSelectedKid(kid.id);
-          if (selectedType) setFormOpen(true);
-        }}
-      >
-        {hasPhoto ? (
-          <Image source={{ uri: kid.photoUri }} style={styles.kidPhoto} />
-        ) : (
-          <View style={styles.kidIconContainer}>
-            <Icon name="account" size={40} color="#888" />
-          </View>
-        )}
-        <Text style={styles.kidName} numberOfLines={1} ellipsizeMode="tail">
-          {kid.name}
-        </Text>
-
-        {isSelected && (
-          <View style={styles.selectedOverlay}>
-            <Icon name="check-circle" size={24} color="#6200ee" />
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
-
-  const ACTIVITY_ICONS: Record<ActivityType, string> = {
-    feeding: 'baby-bottle',
-    sleep: 'bed',
-    diaper: 'baby',
-    bath: 'bathtub',
-    medication: 'pill',
-    note: 'note-text',
-    milestone: 'star',
-  };
-
-  // Activity card component
-  const ActivityTypeCard = ({
-    type,
-    selectedType,
-    setSelectedType,
-    selectedKid,
-  }: {
-    type: ActivityType;
-    selectedType: ActivityType | null;
-    setSelectedType: (type: ActivityType) => void;
-    selectedKid: string | null;
-  }) => {
-    const isSelected = selectedType === type;
-
-    const handlePress = () => {
-      setSelectedType(type);
-
-      if (selectedKid) {
-        setTimeout(() => {
-          setFormOpen(true);
-        }, 300);
-      }
-    };
-
-    return (
-      <TouchableOpacity
-        style={[
-          styles.activityTypeCard,
-          isSelected && styles.activityTypeCardSelected,
-        ]}
-        onPress={handlePress}
-      >
-        <View style={styles.activityIconWrapper}>
-          <Icon name={ACTIVITY_ICONS[type]} size={50} color="#6200ee" />
-        </View>
-        <Text style={styles.activityTypeText}>{type.toUpperCase()}</Text>
-
-        {isSelected && (
-          <View style={styles.selectedOverlay}>
-            <Icon name="check-circle" size={24} color="#6200ee" />
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
-
-  // Helper to narrow existingActivity by type
   function getInitialData<T extends NewActivity>(
     type: ActivityType
   ): T | undefined {
@@ -170,7 +83,6 @@ const ActivityForm: React.FC<Props> = ({
     return undefined;
   }
 
-  // Render the selected form
   const renderForm = () => {
     if (!selectedType || !selectedKid) return null;
 
@@ -259,10 +171,7 @@ const ActivityForm: React.FC<Props> = ({
 
   return (
     <>
-      <TouchableOpacity
-        onPress={onCancel} // passed from parent to close ActivityForm entirely
-        style={styles.backButton}
-      >
+      <TouchableOpacity onPress={onCancel} style={styles.backButton}>
         <Icon name="close" size={28} color="#6200ee" />
         <Text style={styles.backButtonText}>Cancel</Text>
       </TouchableOpacity>
@@ -274,7 +183,15 @@ const ActivityForm: React.FC<Props> = ({
         <Text style={styles.sectionTitle}>Select Kid</Text>
         <View style={styles.grid}>
           {kids.map((kid) => (
-            <KidCard key={kid.id} kid={kid} />
+            <SelectableKidCard
+              key={kid.id}
+              kid={kid}
+              isSelected={selectedKid === kid.id}
+              onSelect={(kidId) => {
+                setSelectedKid(kidId);
+                if (selectedType) setFormOpen(true);
+              }}
+            />
           ))}
         </View>
 
@@ -283,12 +200,15 @@ const ActivityForm: React.FC<Props> = ({
         <Text style={styles.sectionTitle}>Select Activity Type</Text>
         <View style={styles.grid}>
           {(Object.values(ActivityType) as ActivityType[]).map((type) => (
-            <ActivityTypeCard
+            <SelectableActivityCard
               key={type}
               type={type}
-              selectedType={selectedType}
-              setSelectedType={setSelectedType}
-              selectedKid={selectedKid}
+              isSelected={selectedType === type}
+              disabled={!selectedKid}
+              onSelect={(type) => {
+                setSelectedType(type);
+                if (selectedKid) setTimeout(() => setFormOpen(true), 300);
+              }}
             />
           ))}
         </View>
@@ -323,94 +243,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
   },
-  kidCard: {
-    width: CARD_3_SIZE,
-    height: CARD_3_SIZE + 32, // more space for name
-    margin: 6,
-    borderRadius: 8,
-    backgroundColor: '#bdda79ff',
-    alignItems: 'center',
-    paddingVertical: 6,
-    position: 'relative', // allow name to be visible
-  },
-  kidCardSelected: {
-    borderWidth: 2,
-    borderColor: '#6200ee',
-    backgroundColor: '#e8def8', // light purple background to highlight
-    shadowColor: '#6200ee',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 5, // for Android shadow
-  },
-  selectedOverlay: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 2,
-    shadowColor: '#6200ee',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.4,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  kidPhoto: {
-    width: CARD_3_SIZE,
-    height: CARD_3_SIZE,
-    borderRadius: 8,
-    resizeMode: 'cover',
-  },
-  kidIconContainer: {
-    width: CARD_3_SIZE,
-    height: CARD_3_SIZE,
-    borderRadius: 8,
-    backgroundColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  kidName: {
-    marginTop: 0,
-    fontWeight: '600',
-    fontSize: 14,
-    maxWidth: CARD_3_SIZE - 12,
-    textAlign: 'center',
-    flexShrink: 1,
-    color: '#333',
-  },
   divider: {
     height: 1,
     backgroundColor: '#ccc',
     marginVertical: 20,
     marginHorizontal: 6,
-  },
-  activityTypeCard: {
-    width: CARD_4_SIZE,
-    height: CARD_4_SIZE,
-    margin: 6,
-    borderRadius: 8,
-    backgroundColor: '#bdda79ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'column',
-  },
-  activityIconWrapper: {
-    marginBottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 60,
-  },
-  activityTypeCardSelected: {
-    borderWidth: 2,
-    borderColor: '#6200ee',
-  },
-  activityTypeText: {
-    marginTop: 0,
-    marginBottom: 2,
-    fontWeight: '800',
-    fontSize: 10,
-    color: '#6200ee',
   },
   backButton: {
     flexDirection: 'row',
