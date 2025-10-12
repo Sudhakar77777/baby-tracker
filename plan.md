@@ -212,3 +212,54 @@ _No Zustand or Redux needed for these._
 - Avoid premature optimization — focus on MVP
 
 ---
+
+**Packaging notes**
+
+sudo npm install -g eas-cli
+
+eas --version
+
+eas login
+
+eas build:configure
+
+eas build -p android --profile preview --local
+
+Successfully built app
+APK: ./dist/my-app.apk
+
+java -version
+sudo apt update
+sudo apt install openjdk-17-jdk
+java -version
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+echo $JAVA_HOME
+
+export ANDROID_SDK_ROOT=/mnt/c/Users/SudhakarBalakrishnan/AppData/Local/Android/Sdk
+export PATH=$PATH:$ANDROID_SDK_ROOT/emulator
+export PATH=$PATH:$ANDROID_SDK_ROOT/tools
+export PATH=$PATH:$ANDROID_SDK_ROOT/tools/bin
+export PATH=$PATH:$ANDROID_SDK_ROOT/platform-tools
+adb --version
+adb.exe --version
+
+eas build --local --platform android
+
+# Download bundletool if you haven't
+
+wget https://github.com/google/bundletool/releases/download/1.15.6/bundletool-all-1.15.6.jar -O bundletool.jar
+
+# Generate APKs from AAB
+
+java -jar bundletool.jar build-apks \
+ --bundle=build-1760309136631.aab \
+ --output=output.apks \
+ --mode=universal \
+ --ks=your-release-key.jks \
+ --ks-key-alias=your-key-alias \
+ --ks-pass=pass:your-keystore-password \
+ --key-pass=pass:your-key-password
+
+# Extract universal APK
+
+unzip output.apks universal.apk
