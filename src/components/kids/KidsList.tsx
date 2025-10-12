@@ -1,5 +1,12 @@
 import React from 'react';
-import { FlatList, View, StyleSheet, Image, Text } from 'react-native';
+import {
+  FlatList,
+  View,
+  StyleSheet,
+  Image,
+  Text,
+  Platform,
+} from 'react-native';
 import { Kid } from '../../types/Kid';
 import { List, IconButton, Divider } from 'react-native-paper';
 import dayjs from 'dayjs';
@@ -11,78 +18,88 @@ interface KidsListProps {
   onDelete: (id: string) => void;
 }
 
-export default function KidsList({
-  kids,
-  loading,
-  onEdit,
-  onDelete,
-}: KidsListProps) {
+const KidsList = ({ kids, loading, onEdit, onDelete }: KidsListProps) => {
   if (!kids.length && !loading) {
     return <Text style={styles.emptyText}>No kids added yet.</Text>;
   }
+
+  const renderItem = ({ item }: { item: Kid }) => {
+    return <KidCard kid={item} onEdit={onEdit} onDelete={onDelete} />;
+  };
 
   return (
     <FlatList
       data={kids}
       keyExtractor={(item) => item.id}
-      renderItem={({ item, index }) => {
-        let genderStyle = styles.cardOther;
-        if (item.gender === 'boy') genderStyle = styles.cardBoy;
-        else if (item.gender === 'girl') genderStyle = styles.cardGirl;
-
-        return (
-          <View style={[styles.card, genderStyle]}>
-            <List.Item
-              title={`${item.name}`}
-              description={`${dayjs(item.birthdate).format('MMM D, YYYY')}${
-                item.gender ? `  ${capitalize(item.gender)}` : ''
-              }`}
-              left={(props) =>
-                item.photoUri ? (
-                  <Image
-                    source={{ uri: item.photoUri }}
-                    style={styles.kidPhoto}
-                  />
-                ) : (
-                  <List.Icon
-                    {...props}
-                    icon={
-                      item.gender === 'boy'
-                        ? 'baby-bottle-outline'
-                        : item.gender === 'girl'
-                        ? 'baby-carriage'
-                        : 'baby-face-outline'
-                    }
-                    style={{ marginLeft: 2 }} // reduce margin left for icon if no photo
-                  />
-                )
-              }
-              right={(props) => (
-                <View style={styles.actions}>
-                  <IconButton
-                    {...props}
-                    icon="pencil"
-                    onPress={() => onEdit(item)}
-                    style={styles.actionIcon}
-                  />
-                  <IconButton
-                    {...props}
-                    icon="delete"
-                    onPress={() => onDelete(item.id)}
-                    style={styles.actionIcon}
-                  />
-                </View>
-              )}
-            />
-          </View>
-        );
-      }}
+      renderItem={renderItem}
       ItemSeparatorComponent={() => <Divider />}
+      initialNumToRender={5}
+      windowSize={5}
+      maxToRenderPerBatch={5}
+      removeClippedSubviews={true}
     />
   );
-}
+};
+
+export default React.memo(KidsList);
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+interface KidCardProps {
+  kid: Kid;
+  onEdit: (kid: Kid) => void;
+  onDelete: (id: string) => void;
+}
+
+const KidCard = React.memo(({ kid, onEdit, onDelete }: KidCardProps) => {
+  let genderStyle = styles.cardOther;
+  if (kid.gender === 'boy') genderStyle = styles.cardBoy;
+  else if (kid.gender === 'girl') genderStyle = styles.cardGirl;
+
+  return (
+    <View style={[styles.card, genderStyle]}>
+      <List.Item
+        title={kid.name}
+        description={`${dayjs(kid.birthdate).format('MMM D, YYYY')}${
+          kid.gender ? `  ${capitalize(kid.gender)}` : ''
+        }`}
+        left={(props) =>
+          kid.photoUri ? (
+            <Image source={{ uri: kid.photoUri }} style={styles.kidPhoto} />
+          ) : (
+            <List.Icon
+              {...props}
+              icon={
+                kid.gender === 'boy'
+                  ? 'baby-bottle-outline'
+                  : kid.gender === 'girl'
+                  ? 'baby-carriage'
+                  : 'baby-face-outline'
+              }
+              style={{ marginLeft: 2 }}
+            />
+          )
+        }
+        right={(props) => (
+          <View style={styles.actions}>
+            <IconButton
+              {...props}
+              icon="pencil"
+              onPress={() => onEdit(kid)}
+              style={styles.actionIcon}
+            />
+            <IconButton
+              {...props}
+              icon="delete"
+              onPress={() => onDelete(kid.id)}
+              style={styles.actionIcon}
+            />
+          </View>
+        )}
+      />
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -92,23 +109,27 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginVertical: 6,
     marginHorizontal: 4,
-    elevation: 3, // Android shadow
-    // ✅ New boxShadow
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.12)',
-    // ⛔️ Deprecated, but kept for backward compatibility
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
+    backgroundColor: '#fff',
+    ...Platform.select({
+      android: {
+        elevation: 3,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 4,
+      },
+    }),
   },
   cardBoy: {
-    backgroundColor: '#DCEEFB', // baby blue
+    backgroundColor: '#DCEEFB',
   },
   cardGirl: {
-    backgroundColor: '#FDEDEC', // baby pink
+    backgroundColor: '#FDEDEC',
   },
   cardOther: {
-    backgroundColor: '#E6E6FA', // lavender
+    backgroundColor: '#E6E6FA',
   },
   kidPhoto: {
     width: 40,
