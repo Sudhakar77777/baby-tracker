@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import dayjs from 'dayjs';
@@ -59,19 +60,19 @@ function getDetailsSummary(item: Activity): string {
   }
 }
 
-function ActivityList(props: ActivityListProps) {
-  const { activities, onEdit, onDelete } = props;
+function ActivityList({ activities, onEdit, onDelete }: ActivityListProps) {
   const { kids } = React.useContext(AppContext)!;
 
   if (activities.length === 0) {
     return <Text style={styles.empty}>No activities found.</Text>;
   }
 
-  function renderItem({ item }: { item: Activity }) {
+  function renderItem({ item, index }: { item: Activity; index: number }) {
     const kid = kids.find((k) => k.id === item.kidId);
+    const isEven = index % 2 === 0;
 
     return (
-      <View style={styles.itemContainer}>
+      <View style={[styles.card, isEven ? styles.cardEven : styles.cardOdd]}>
         <View style={styles.left}>
           {kid?.photoUri ? (
             <Image source={{ uri: kid.photoUri }} style={styles.kidPhoto} />
@@ -83,6 +84,7 @@ function ActivityList(props: ActivityListProps) {
               style={styles.kidPhoto}
             />
           )}
+
           <Icon
             name={iconMap[item.type]}
             size={36}
@@ -143,13 +145,31 @@ const styles = StyleSheet.create({
   list: {
     paddingBottom: 50,
   },
-  itemContainer: {
+  card: {
+    borderRadius: 12,
+    padding: 12,
+    marginVertical: 6,
+    marginHorizontal: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
     alignItems: 'flex-start',
+    ...Platform.select({
+      android: {
+        elevation: 2,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+    }),
+  },
+  cardEven: {
+    backgroundColor: '#FFF7F0', // soft peach
+  },
+  cardOdd: {
+    backgroundColor: '#F0F9FF', // soft blue
   },
   left: {
     flexDirection: 'row',
@@ -162,7 +182,7 @@ const styles = StyleSheet.create({
   kidPhoto: {
     width: 32,
     height: 32,
-    borderRadius: 14,
+    borderRadius: 16,
     marginRight: 8,
     marginTop: 8,
     backgroundColor: '#eee',
